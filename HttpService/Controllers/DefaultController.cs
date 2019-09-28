@@ -10,7 +10,7 @@ namespace HttpService.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class DefaultController: Controller
+    public class DefaultController: ControllerBase
     {
         public DefaultController(
             XMLCommonUtil xmlCommonUtil,
@@ -33,14 +33,14 @@ namespace HttpService.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post()
+        public IActionResult Post(RequestModel model)
         {
             string gubun = xmlCommonUtil.GUBUN;
-
+            
             if (!xmlCommonUtil.CheckSessionID() && !PassCheckSessionID)
             {
                 // TODO 반환값 정의
-                return null;
+                return StatusCode(401);
             }
 
             switch (gubun)
@@ -117,8 +117,9 @@ namespace HttpService.Controllers
 
                 /*기본 xml return *********************************/
                 default:
-                    if (!string.IsNullOrEmpty(xmlCommonUtil.QueryString[XMLCommonUtil.PROC_KEY_STRING]))
-                    {
+                    //if (!string.IsNullOrEmpty(xmlCommonUtil.QueryString[XMLCommonUtil.PROC_KEY_STRING]))
+                        if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.Proc))
+                        {
                         var dataResult = xmlCommonUtil.WriteXML(false);
                         return Ok(dataResult);
                     }
