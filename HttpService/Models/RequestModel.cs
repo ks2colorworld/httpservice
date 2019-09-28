@@ -1,50 +1,91 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Data;
 using System.Dynamic;
 using System.Linq;
-using System.Text;
+using System.Runtime.Serialization;
+using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Schema;
+using System.Xml.Serialization;
 
 namespace HttpService.Models
 {
-    public class RequestModel
+    //[DataContract]
+    public class RequestModel //: Dictionary<string, string> //==> 값이 JsonElement 형식
     {
         public string Gubun { get; set; }
 
         public string Proc { get; set; }
 
-        public string WebGubun { get; set; }
+        public string Web_gubun { get; set; }
 
+        public string SessionId { get; set; }
 
-    }
+        public string Organization_key { get; set; }
 
-    public class ResponseModel
-    {
-        public IList<ResponseValueModel> Values { get; set; } = new List<ResponseValueModel>();
+        public string Operator_key { get; set; }
 
-        public IDictionary<string, IEnumerable<dynamic>> DataSet { get; set; } = new Dictionary<string, IEnumerable<dynamic>>();
-    }
+        //public InnerRequestModel Data { get; set; } = new InnerRequestModel();
 
-    public class ResponseValueModel
-    {
-        public IList<ResponseItemModel> Item { get; set; } = new List<ResponseItemModel>();
-    }
+        //public InnerRequestModel Options { get; set; } = new InnerRequestModel();
 
-    public class ResponseItemModel 
-    {
-        public string Code { get; set; }
+        public InnerRequestModel Parameters { get; set; } = new InnerRequestModel();
 
-        public string Message { get; set; }
-    }
+        public string GetValue(string key, string defaultValue = "")
+        {
+            //if (Data.Count > 0)
+            //{
+            //    if (Data.ContainsKey(key))
+            //    {
+            //        return Data[key];
+            //    }
+            //}
 
-    public class FileResponseModel: ResponseModel
-    {
-        public string FileName { get; set; }
+            if (Parameters.Count > 0)
+            {
+                if (Parameters.ContainsKey(key))
+                {
+                    return Parameters[key];
+                }
+            }
 
-        public string ContentType { get; set; }
+            //if(Options.Count > 0) {
+            //    if (Options.ContainsKey(key))
+            //    {
+            //        return Options[key];
+            //    }
+            //}
 
-        public Encoding ContentEncoding { get; set; }
+            return defaultValue;
+        }
 
-        public byte[] Content { get; set; }
+        public bool ContainsKey(string key)
+        {
+            //if (Data.Count > 0)
+            //{
+            //    if (Data.ContainsKey(key))
+            //    {
+            //        return true;
+            //    }
+            //}
+
+            if (Parameters.Count > 0)
+            {
+                if (Parameters.ContainsKey(key))
+                {
+                    return true;
+                }
+            }
+
+            //if(Options.Count > 0) {
+            //    if (Options.ContainsKey(key))
+            //    {
+            //       return true;
+            //    }
+            //}
+
+            return false;
+        }
     }
 }
