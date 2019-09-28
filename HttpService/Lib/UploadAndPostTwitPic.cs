@@ -126,9 +126,16 @@ namespace HttpService.Lib
             get
             {
                 string return_str = string.Empty;
-                string id = xmlCommonUtil.QueryString[TWIT_ID_key] == null ?
-                    string.Empty :
-                    xmlCommonUtil.QueryString[TWIT_ID_key].ToString();
+                string id = String.Empty;
+                    //xmlCommonUtil.QueryString[TWIT_ID_key] == null ?
+                    //string.Empty :
+                    //xmlCommonUtil.QueryString[TWIT_ID_key].ToString();
+
+                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(TWIT_ID_key))
+                {
+                    id = xmlCommonUtil.RequestData.Parameters[TWIT_ID_key];
+                }
+
                 id = id.Replace("@", " ");
                 string[] ids = id.Split(new string[] { ",", "|", " " }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string item in ids)
@@ -149,9 +156,15 @@ namespace HttpService.Lib
             get
             {
                 string return_str = this.TWIT_ID;
-                string msg = xmlCommonUtil.QueryString[MESSAGE_key] == null ?
-                    string.Empty :
-                    xmlCommonUtil.QueryString[MESSAGE_key].ToString();
+                string msg = String.Empty;
+                //xmlCommonUtil.QueryString[MESSAGE_key] == null ?
+                //string.Empty :
+                //xmlCommonUtil.QueryString[MESSAGE_key].ToString();
+
+                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(MESSAGE_key))
+                {
+                    msg = xmlCommonUtil.RequestData.Parameters[MESSAGE_key];
+                }
 
                 return return_str + " " + msg;
             }

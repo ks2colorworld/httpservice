@@ -591,13 +591,15 @@ namespace HttpService.Lib
             //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_IP_GUBUN, _httpContext.Request.ServerVariables["REMOTE_ADDR"]));
             temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_IP_GUBUN, _httpContext.Connection.RemoteIpAddress.ToString()));
 
-            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.OPERATOR_KEY_GUBUN]));
+            //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.OPERATOR_KEY_GUBUN]));
+            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.RequestData.Operator_key));
 
             //*
             bool include_organization_key = XMLCommonUtil.INCLUDE_ORGANIZATION_KEY;
             if (include_organization_key)
             {
-                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.ORGANIZATION_KEY_GUBUN].ToString()));
+                //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.ORGANIZATION_KEY_GUBUN].ToString()));
+                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.RequestData.Organization_key));
             }
             //*/
 
@@ -784,27 +786,48 @@ namespace HttpService.Lib
         {
             get
             {
-                return xmlCommonUtil.QueryString[ATTACHMENT_GUBUN_key] == null ?
-                    "etc" :
-                    xmlCommonUtil.QueryString[ATTACHMENT_GUBUN_key].ToString();
+                //return xmlCommonUtil.QueryString[ATTACHMENT_GUBUN_key] == null ?
+                //    "etc" :
+                //    xmlCommonUtil.QueryString[ATTACHMENT_GUBUN_key].ToString();
+
+                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(ATTACHMENT_GUBUN_key))
+                {
+                    return xmlCommonUtil.RequestData.Parameters[ATTACHMENT_GUBUN_key];
+                }
+
+                return "etc";
             }
         }
         private string ATTACHMENT_DETAIL_CODE
         {
             get
             {
-                return xmlCommonUtil.QueryString[ATTACHMENT_DETAIL_CODE_key] == null ?
-                    string.Empty :
-                    xmlCommonUtil.QueryString[ATTACHMENT_DETAIL_CODE_key].ToString();
+                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(ATTACHMENT_DETAIL_CODE_key))
+                {
+                    return xmlCommonUtil.RequestData.Parameters[ATTACHMENT_DETAIL_CODE_key];
+                }
+
+                return String.Empty;
+
+                //return xmlCommonUtil.QueryString[ATTACHMENT_DETAIL_CODE_key] == null ?
+                //    string.Empty :
+                //    xmlCommonUtil.QueryString[ATTACHMENT_DETAIL_CODE_key].ToString();
             }
         }
         public string ATTACHMENT_KEY
         {
             get
             {
-                return xmlCommonUtil.QueryString[ATTACHMENT_KEY_key] == null ?
-                    string.Empty :
-                    xmlCommonUtil.QueryString[ATTACHMENT_KEY_key].ToString();
+                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(ATTACHMENT_KEY_key))
+                {
+                    return xmlCommonUtil.RequestData.Parameters[ATTACHMENT_KEY_key];
+                }
+
+                return String.Empty;
+
+                //return xmlCommonUtil.QueryString[ATTACHMENT_KEY_key] == null ?
+                //    string.Empty :
+                //    xmlCommonUtil.QueryString[ATTACHMENT_KEY_key].ToString();
             }
         }
         private string ATTACHMENT_CUD_PROC

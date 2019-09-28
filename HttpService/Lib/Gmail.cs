@@ -27,7 +27,7 @@ namespace HttpService.Lib
         private ArrayList _listBcc = new ArrayList();
         private ArrayList _listAnexos = new ArrayList();
         // TODO 확인 사용되지 않습니다.
-        private string _zipFileName;
+        //private string _zipFileName;
 
         private Boolean _html = false;
         private string _fromAlias = "";

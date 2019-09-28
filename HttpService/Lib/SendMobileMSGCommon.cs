@@ -153,13 +153,16 @@ namespace HttpService.Lib
             //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_IP_GUBUN, _httpContext.Request.ServerVariables["REMOTE_ADDR"]));
             temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_IP_GUBUN, _httpContext.Connection.RemoteIpAddress));
 
-            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.OPERATOR_KEY_GUBUN]));
+            //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.OPERATOR_KEY_GUBUN]));
+            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.OPERATOR_KEY_GUBUN)));
 
             //*
             bool include_organization_key = XMLCommonUtil.INCLUDE_ORGANIZATION_KEY;
             if (include_organization_key)
             {
-                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.ORGANIZATION_KEY_GUBUN].ToString()));
+                //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.ORGANIZATION_KEY_GUBUN].ToString()));
+
+                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.ORGANIZATION_KEY_GUBUN)));
             }
             //*/
 
@@ -184,10 +187,15 @@ namespace HttpService.Lib
             for (int seq = 1; seq < 4; seq++)
             {
                 string pKey = "tran_etc" + seq.ToString();
-                if (xmlCommonUtil.QueryString[pKey] != null)
+                //if (xmlCommonUtil.QueryString[pKey] != null)
+                //{
+                //    temp_param.Add(new SqlParameter("@" + pKey, xmlCommonUtil.QueryString[pKey].ToString()));
+                //}
+
+                if (xmlCommonUtil.RequestData.ContainsKey(pKey))
                 {
-                    temp_param.Add(new SqlParameter("@" + pKey, xmlCommonUtil.QueryString[pKey].ToString()));
-                }
+                    temp_param.Add(new SqlParameter("@" + pKey, xmlCommonUtil.RequestData.GetValue(pKey)));
+                }             
             }
 
             SqlParameter[] sqlparams = temp_param.ToArray();
@@ -251,13 +259,16 @@ namespace HttpService.Lib
             temp_param.Add(new SqlParameter("@" + XMLCommonUtil.GUBUN_KEY_STRING, GUBUN_SAVE_MMS_FILE));
             //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_IP_GUBUN, _httpContext.Request.ServerVariables["REMOTE_ADDR"]));
             temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_IP_GUBUN, _httpContext.Connection.RemoteIpAddress));
-            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.OPERATOR_KEY_GUBUN]));
+            //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.OPERATOR_KEY_GUBUN]));
+            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.OPERATOR_KEY_GUBUN)));
+
 
             //*
             bool include_organization_key = XMLCommonUtil.INCLUDE_ORGANIZATION_KEY;
             if (include_organization_key)
             {
-                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.ORGANIZATION_KEY_GUBUN].ToString()));
+                //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.ORGANIZATION_KEY_GUBUN].ToString()));
+                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.ORGANIZATION_KEY_GUBUN)));
             }
             //*/
 
@@ -267,7 +278,8 @@ namespace HttpService.Lib
 
             if (file_cnt == -1 && !string.IsNullOrEmpty(filePath))
             {
-                temp_param.Add(new SqlParameter("@" + FILE_TYPE_KEY + "1", xmlCommonUtil.QueryString[FILE_TYPE + "1"]));
+                //temp_param.Add(new SqlParameter("@" + FILE_TYPE_KEY + "1", xmlCommonUtil.QueryString[FILE_TYPE + "1"]));
+                temp_param.Add(new SqlParameter("@" + FILE_TYPE_KEY + "1", xmlCommonUtil.RequestData.GetValue(FILE_TYPE + "1")));
                 temp_param.Add(new SqlParameter("@" + FILE_NAME_KEY + "1", filePath));
             }
             //기존 방식
@@ -350,79 +362,127 @@ namespace HttpService.Lib
             get
             {
                 //sms, mms, url
-                return xmlCommonUtil.QueryString[MSG_TYPE_key] == null ?
-                    MSGType.SMS :
-                    (MSGType)Enum.Parse(typeof(MSGType), xmlCommonUtil.QueryString[MSG_TYPE_key]);
+                //return xmlCommonUtil.QueryString[MSG_TYPE_key] == null ?
+                //    MSGType.SMS :
+                //    (MSGType)Enum.Parse(typeof(MSGType), xmlCommonUtil.QueryString[MSG_TYPE_key]);
+
+                if (xmlCommonUtil.RequestData.ContainsKey(MSG_TYPE_key))
+                {
+                    return (MSGType)Enum.Parse(typeof(MSGType), xmlCommonUtil.RequestData.GetValue(MSG_TYPE_key));
+                }
+
+                return MSGType.SMS;
             }
         }
         private string SENDER_PHONE
         {
             get
             {
-                if (!this.checkPhoneNumber(xmlCommonUtil.QueryString[SENDER_PHONE_key]))
+                //if (!this.checkPhoneNumber(xmlCommonUtil.QueryString[SENDER_PHONE_key]))
+                var senderPhoneNumber = xmlCommonUtil.RequestData.GetValue(SENDER_PHONE_key);
+                if (!this.checkPhoneNumber(senderPhoneNumber))
                 {
+                    //xmlCommonUtil.ResponseWriteErrorMSG(
+                    //    "[" + SENDER_PHONE_key + "=" +
+                    //    xmlCommonUtil.QueryString["sender_phone"].ToString() +
+                    //    "]전화번호 형식이 올바르지 않습니다.(예:010-1234-5678)");
+
+                    // TODO 예외처리가 더 좋지 않을까?
                     xmlCommonUtil.ResponseWriteErrorMSG(
                         "[" + SENDER_PHONE_key + "=" +
-                        xmlCommonUtil.QueryString["sender_phone"].ToString() +
+                        senderPhoneNumber +
                         "]전화번호 형식이 올바르지 않습니다.(예:010-1234-5678)");
+                    
                     return null;
                 }
                 //010-1234-5678
-                return xmlCommonUtil.QueryString[SENDER_PHONE_key] == null ?
+                //return xmlCommonUtil.QueryString[SENDER_PHONE_key] == null ?
+                //    null :
+                //    xmlCommonUtil.QueryString[SENDER_PHONE_key].ToString();
+
+                return String.IsNullOrWhiteSpace(senderPhoneNumber) ?
                     null :
-                    xmlCommonUtil.QueryString[SENDER_PHONE_key].ToString();
+                    senderPhoneNumber;
             }
         }
         private string RECEIVER_PHONE
         {
             get
             {
-                if (!this.checkPhoneNumber(xmlCommonUtil.QueryString[RECEIVER_PHONE_key]))
+                var receiverPhoneNumber = xmlCommonUtil.RequestData.GetValue(RECEIVER_PHONE_key);
+
+                //if (!this.checkPhoneNumber(xmlCommonUtil.QueryString[RECEIVER_PHONE_key]))
+
+                if (!this.checkPhoneNumber(receiverPhoneNumber))
                 {
+                    //xmlCommonUtil.ResponseWriteErrorMSG(
+                    //    "[" + RECEIVER_PHONE_key + "=" +
+                    //    xmlCommonUtil.QueryString[RECEIVER_PHONE_key].ToString() +
+                    //    "]전화번호 형식이 올바르지 않습니다.(예:010-1234-5678)");
+
+                    // TODO 예외처리가 더 좋지 않을까?
                     xmlCommonUtil.ResponseWriteErrorMSG(
-                        "[" + RECEIVER_PHONE_key + "=" +
-                        xmlCommonUtil.QueryString[RECEIVER_PHONE_key].ToString() +
-                        "]전화번호 형식이 올바르지 않습니다.(예:010-1234-5678)");
+                   "[" + RECEIVER_PHONE_key + "=" +
+                   receiverPhoneNumber +
+                   "]전화번호 형식이 올바르지 않습니다.(예:010-1234-5678)");
+
                     return null;
                 }
 
                 //010-1234-5678
-                return xmlCommonUtil.QueryString[RECEIVER_PHONE_key] == null ?
-                    null :
-                    xmlCommonUtil.QueryString[RECEIVER_PHONE_key].ToString();
+                //return xmlCommonUtil.QueryString[RECEIVER_PHONE_key] == null ?
+                //    null :
+                //    xmlCommonUtil.QueryString[RECEIVER_PHONE_key].ToString();
+
+                return String.IsNullOrWhiteSpace(receiverPhoneNumber) ? 
+                    null : 
+                    receiverPhoneNumber;
             }
         }
         private string SEND_DATE
         {
             get
             {
-                if (object.Equals(null, xmlCommonUtil.QueryString[DATE_key]))
+                var dateValue = xmlCommonUtil.RequestData.GetValue(DATE_key);
+
+                //if (object.Equals(null, xmlCommonUtil.QueryString[DATE_key]))
+                if (String.IsNullOrWhiteSpace(dateValue))
                 {
                     return null;
                 }
+
                 DateTime date;
-                if (!DateTime.TryParse(xmlCommonUtil.QueryString[DATE_key], out date))
+                //if (!DateTime.TryParse(xmlCommonUtil.QueryString[DATE_key], out date))
+                if (!DateTime.TryParse(dateValue, out date))
                 {
+                    //xmlCommonUtil.ResponseWriteErrorMSG(
+                    //    "[" + DATE_key + "=" +
+                    //    xmlCommonUtil.QueryString[DATE_key].ToString() +
+                    //    "]예약 날짜 형식이 올바르지 않습니다.(예:2010-02-17 13:45)");
                     xmlCommonUtil.ResponseWriteErrorMSG(
                         "[" + DATE_key + "=" +
-                        xmlCommonUtil.QueryString[DATE_key].ToString() +
+                        date +
                         "]예약 날짜 형식이 올바르지 않습니다.(예:2010-02-17 13:45)");
                     return null;
                 }
 
                 //2010-02-10 13:10
-                return xmlCommonUtil.QueryString[DATE_key] == null ?
-                    null :
-                    xmlCommonUtil.QueryString[DATE_key].ToString();
+                //return xmlCommonUtil.QueryString[DATE_key] == null ?
+                //    null :
+                //    xmlCommonUtil.QueryString[DATE_key].ToString();
+
+                return String.IsNullOrWhiteSpace(dateValue) ? null : dateValue;
             }
         }
         private string SEND_MSG_STRING
         {
             get
             {
-                return xmlCommonUtil.QueryString[MSG_key] == null ?
-                    "" :
-                    xmlCommonUtil.QueryString[MSG_key].ToString();
+                //return xmlCommonUtil.QueryString[MSG_key] == null ?
+                //    "" :
+                //    xmlCommonUtil.QueryString[MSG_key].ToString();
+
+                return xmlCommonUtil.RequestData.GetValue(MSG_key);
             }
         }
         private List<MMSFiles> FILE_LIST
@@ -446,12 +506,17 @@ namespace HttpService.Lib
                 for (int i = 0; i < FILE_COUNT; i++)
                 {
                     int c = i + 1;
-                    string fileType = xmlCommonUtil.QueryString[FILE_TYPE + c.ToString()] == null ?
-                        string.Empty : xmlCommonUtil.QueryString[FILE_TYPE + c.ToString()];
-                    string fileName = xmlCommonUtil.QueryString[FILE_NAME + c.ToString()] == null ?
-                        string.Empty : xmlCommonUtil.QueryString[FILE_NAME + c.ToString()];
-                    string fileUrl = xmlCommonUtil.QueryString[FILE_URL + c.ToString()] == null ?
-                        string.Empty : xmlCommonUtil.QueryString[FILE_URL + c.ToString()];
+                    //string fileType = xmlCommonUtil.QueryString[FILE_TYPE + c.ToString()] == null ?
+                    //    string.Empty : xmlCommonUtil.QueryString[FILE_TYPE + c.ToString()];
+                    //string fileName = xmlCommonUtil.QueryString[FILE_NAME + c.ToString()] == null ?
+                    //    string.Empty : xmlCommonUtil.QueryString[FILE_NAME + c.ToString()];
+                    //string fileUrl = xmlCommonUtil.QueryString[FILE_URL + c.ToString()] == null ?
+                    //    string.Empty : xmlCommonUtil.QueryString[FILE_URL + c.ToString()];
+
+                    string fileType = xmlCommonUtil.RequestData.GetValue(FILE_TYPE + c.ToString());
+                    string fileName = xmlCommonUtil.RequestData.GetValue(FILE_NAME + c.ToString());
+                    string fileUrl = xmlCommonUtil.RequestData.GetValue(FILE_URL + c.ToString());
+
 
                     if (string.IsNullOrEmpty(fileType) || string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(fileUrl))
                     {
@@ -477,14 +542,20 @@ namespace HttpService.Lib
             get
             {
                 int fileCount = 0;
-                if (!int.TryParse(xmlCommonUtil.QueryString[MMS_FILE_CNT_key], out fileCount))
+                var mmsFilecount = xmlCommonUtil.RequestData.GetValue(MMS_FILE_CNT_key);
+                //if (!int.TryParse(xmlCommonUtil.QueryString[MMS_FILE_CNT_key], out fileCount))
+                if(!int.TryParse(mmsFilecount, out fileCount))
                 {
-                    xmlCommonUtil.ResponseWriteErrorMSG("[" + xmlCommonUtil.QueryString[MMS_FILE_CNT_key].ToString() + "]MMS 첨부파일 데이터 중 일부가 올바르지 않습니다.(mms_file_cnt)");
+                    //xmlCommonUtil.ResponseWriteErrorMSG("[" + xmlCommonUtil.QueryString[MMS_FILE_CNT_key].ToString() + "]MMS 첨부파일 데이터 중 일부가 올바르지 않습니다.(mms_file_cnt)");
+                    xmlCommonUtil.ResponseWriteErrorMSG($"[{ mmsFilecount }]MMS 첨부파일 데이터 중 일부가 올바르지 않습니다.(mms_file_cnt)");
+
                     return 0;
                 }
-                return xmlCommonUtil.QueryString[MMS_FILE_CNT_key] == null ?
-                    0 :
-                    int.Parse(xmlCommonUtil.QueryString[MMS_FILE_CNT_key].ToString());
+                //return xmlCommonUtil.QueryString[MMS_FILE_CNT_key] == null ?
+                //    0 :
+                //    int.Parse(xmlCommonUtil.QueryString[MMS_FILE_CNT_key].ToString());
+
+                return fileCount;
             }
         }
         //mms_subject
@@ -492,9 +563,11 @@ namespace HttpService.Lib
         {
             get
             {
-                return xmlCommonUtil.QueryString[MMS_SUBJECT_key] == null ?
-                    string.Empty :
-                    xmlCommonUtil.QueryString[MMS_SUBJECT_key].ToString();
+                //return xmlCommonUtil.QueryString[MMS_SUBJECT_key] == null ?
+                //    string.Empty :
+                //    xmlCommonUtil.QueryString[MMS_SUBJECT_key].ToString();
+
+                return xmlCommonUtil.RequestData.GetValue(MMS_SUBJECT_key);
             }
         }
 

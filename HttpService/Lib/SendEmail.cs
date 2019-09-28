@@ -41,9 +41,9 @@ namespace HttpService.Lib
 
         private const string P_TYPE_DIRECT_value = "direct";
         private const string P_TYPE_FORM_value = "form";//추후 구현할 value값
-        
-        
-        
+
+
+
         public SendEmail(
             XMLCommonUtil xmlCommonUtil,
             FileCommonUtil fileCommonUtil,
@@ -149,9 +149,16 @@ namespace HttpService.Lib
         {
             get
             {
-                string to = xmlCommonUtil.QueryString[TO_key] == null ?
-                    string.Empty :
-                    xmlCommonUtil.QueryString[TO_key].ToString();
+                string to = String.Empty;
+                //xmlCommonUtil.QueryString[TO_key] == null ?
+                //string.Empty :
+                //xmlCommonUtil.QueryString[TO_key].ToString();
+
+                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(TO_key))
+                {
+                    to = xmlCommonUtil.RequestData.Parameters[TO_key];
+                }
+
                 string[] tos = to.Split(new string[] { ",", "|", " " }, StringSplitOptions.RemoveEmptyEntries);
 
                 return tos;
@@ -161,27 +168,33 @@ namespace HttpService.Lib
         {
             get
             {
-                return xmlCommonUtil.QueryString[MESSAGE_key] == null ?
-                    string.Empty :
-                    xmlCommonUtil.QueryString[MESSAGE_key].ToString();
+                //return xmlCommonUtil.QueryString[MESSAGE_key] == null ?
+                //    string.Empty :
+                //    xmlCommonUtil.QueryString[MESSAGE_key].ToString();
+
+                return xmlCommonUtil.RequestData.GetValue(MESSAGE_key);
             }
         }
         private string SUBJECT
         {
             get
             {
-                return xmlCommonUtil.QueryString[SUBJECT_key] == null ?
-                    null :
-                    xmlCommonUtil.QueryString[SUBJECT_key].ToString();
+                //return xmlCommonUtil.QueryString[SUBJECT_key] == null ?
+                //    null :
+                //    xmlCommonUtil.QueryString[SUBJECT_key].ToString();
+
+                return xmlCommonUtil.RequestData.GetValue(SUBJECT_key);
             }
         }
         private string P_TYPE
         {
             get
             {
-                return xmlCommonUtil.QueryString[P_TYPE_key] == null ?
-                    null :
-                    xmlCommonUtil.QueryString[P_TYPE_key].ToString();
+                //return xmlCommonUtil.QueryString[P_TYPE_key] == null ?
+                //    null :
+                //    xmlCommonUtil.QueryString[P_TYPE_key].ToString();
+
+                return xmlCommonUtil.RequestData.GetValue(P_TYPE_key);
             }
         }
     }

@@ -22,6 +22,7 @@ using HttpService.Options;
 using System.Linq;
 using System.Threading.Tasks;
 using HttpService.Models;
+using System.IO;
 
 namespace HttpService.Lib
 {
@@ -39,7 +40,7 @@ namespace HttpService.Lib
         }
 
 #if SESSION_CHECK
-    public const bool SESSION_CHECK = true;
+        public const bool SESSION_CHECK = true;
 #else
         public const bool SESSION_CHECK = false;
 #endif
@@ -73,6 +74,11 @@ namespace HttpService.Lib
 
 
         private const string ALLOW_PROC_KEY = "allow_proc_list";
+
+        public RequestModel RequestData
+        {
+            get => requestData;
+        }
 
         private string[] allowProc
         {
@@ -121,17 +127,21 @@ namespace HttpService.Lib
         {
             get
             {
-                return _httpContext.Session.GetString("guid"); 
+                return _httpContext.Session.GetString("guid");
                 //return this.Session.SessionID;
                 //return _httpContext.Session["guid"].ToString();
             }
         }
+
         public string PROCEDURE_TITLE
         {
             get
             {
-                string proc_gubun = QueryString[PROC_KEY_STRING];
-                string web_gubun = QueryString[WEB_GUBUN_KEY];
+                //string proc_gubun = QueryString[PROC_KEY_STRING];
+                //string web_gubun = QueryString[WEB_GUBUN_KEY];
+
+                string proc_gubun = requestData.Proc;
+                string web_gubun = requestData.Web_gubun;
 
                 bool isWebQuery = false;
                 bool isAllowProc = false;
@@ -169,52 +179,60 @@ namespace HttpService.Lib
         {
             get
             {
-                return this.QueryString[GUBUN_KEY_STRING] == null ?
-                    string.Empty :
-                    this.QueryString[GUBUN_KEY_STRING].ToString();
+                //return this.QueryString[GUBUN_KEY_STRING] == null ?
+                //    string.Empty :
+                //    this.QueryString[GUBUN_KEY_STRING].ToString();
+
+                return requestData.Gubun ?? String.Empty;
+
             }
         }
+
         public string WEB_GUBUN
         {
             get
             {
-                return this.QueryString[WEB_GUBUN_KEY] == null ?
-                    string.Empty :
-                    this.QueryString[WEB_GUBUN_KEY].ToString();
+                //return this.QueryString[WEB_GUBUN_KEY] == null ?
+                //    string.Empty :
+                //    this.QueryString[WEB_GUBUN_KEY].ToString();
+
+                return requestData.Web_gubun ?? String.Empty;
             }
         }
-        
-        public Dictionary<string,string> QueryString
-        {
-            get
-            {
-                Dictionary<string, string> requestValues = new Dictionary<string, string>();
 
-                string httpMethod = _httpContext.Request.Method.ToUpper();
-                switch (httpMethod)
-                {
-                    case "POST":
-                        //return return _httpContext.Request.Form;
-                        requestValues= _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
-                        break;
-#if USING_GET
-                    case "GET":
-                        //return _httpContext.Request.QueryString.;
-                        requestValues= _httpContext.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString());
-                        break;
-                    default:
-                         //_httpContext.Request.RouteValues.Params;
-                        break;
-#else
-                    default:
-                       requestValues= _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
-                        break;
-#endif
-                }
+//        public Dictionary<string, string> QueryString
+//        {
+//            get
+//            {
+//                Dictionary<string, string> requestValues = new Dictionary<string, string>();
 
-                return requestValues;
-            }
-        }
+//                string httpMethod = _httpContext.Request.Method.ToUpper();
+//                switch (httpMethod)
+//                {
+//                    case "POST":
+//                        //return return _httpContext.Request.Form;
+//                        requestValues = _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
+
+//                        break;
+//#if USING_GET
+//                    case "GET":
+//                        //return _httpContext.Request.QueryString.;
+//                        requestValues = _httpContext.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString());
+//                        break;
+//                    default:
+//                        //_httpContext.Request.RouteValues.Params;
+//                        break;
+//#else
+//                            default:
+//                               requestValues= _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
+//                                break;
+//#endif
+//                }
+
+//                return requestValues;
+//            }
+//        }
+
         public SqlConnection SQLCONNECTION
         {
             get
@@ -232,32 +250,41 @@ namespace HttpService.Lib
         {
             get
             {
-                if (QueryString.Count == 0)
-                {
-                    return null;
-                }
 
                 List<SqlParameter> temp_param = new List<SqlParameter>();
+                //if (QueryString.Count == 0)
+                if (requestData.Parameters.Count == 0)
+                {
+                    return temp_param.ToArray();
+                }
+
 
                 bool include_organization_key = XMLCommonUtil.INCLUDE_ORGANIZATION_KEY;
 
-                foreach(var item in QueryString)
+                //foreach (var item in QueryString)
+                //{
+                //    string key = item.Key;
+                //    if (PROC_KEY_STRING.Equals(key, StringComparison.OrdinalIgnoreCase))
+                //    {
+                //        continue;
+                //    }
+
+                //    if (SESSIONID_KEY_STRING.Equals(key, StringComparison.OrdinalIgnoreCase))
+                //    {
+                //        continue;
+                //    }
+
+                //    if ((!include_organization_key && ORGANIZATION_KEY_GUBUN.Equals(key, StringComparison.OrdinalIgnoreCase)))
+                //    {
+                //        continue;
+                //    }
+
+                //    temp_param.Add(new SqlParameter($"@{key}", item.Value));
+                //}
+
+                foreach (var item in requestData.Parameters)
                 {
                     string key = item.Key;
-                    if(PROC_KEY_STRING.Equals(key, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    if(SESSIONID_KEY_STRING.Equals(key, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    if ((!include_organization_key && ORGANIZATION_KEY_GUBUN.Equals(key, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        continue;
-                    }
 
                     temp_param.Add(new SqlParameter($"@{key}", item.Value));
                 }
@@ -313,10 +340,16 @@ namespace HttpService.Lib
             }
         }
 
+        public void SetReqestModel(RequestModel data)
+        {
+            requestData = data;
+        }
+
         public ResponseModel returnErrorMSGXML(string msg)
         {
             return this.returnMSGXML("100", msg);
         }
+
         public ResponseModel returnErrorMSGXML(string msg, Exception ex)
         {
             return this.returnErrorMSGXML(msg
@@ -332,31 +365,27 @@ namespace HttpService.Lib
         {
             return new ResponseModel
             {
-                Values = new List<ResponseValueModel>
-                {
-                    new ResponseValueModel
+                Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>{
                     {
-                        Item = new List<ResponseItemModel>
-                        {
-                            new ResponseItemModel
-                            {
-                                Code = code,
-                                Message = msg,
+                        "Item", new List<Dictionary<string, object>>{
+                            new Dictionary<string, object>{
+                                ["Code"] = code,
+                                ["Message"] = msg,
                             }
-                        }
+                        }  
                     }
-                }
+                }                
             };
 
-//            return string.Format(MSG_XML,
-//#if RETURN_xmlns_SESSIONID
-// this.sessionID,
-//#else
-// NAMESPACE_STR,
-//#endif
-// code, msg);
+            //            return string.Format(MSG_XML,
+            //#if RETURN_xmlns_SESSIONID
+            // this.sessionID,
+            //#else
+            // NAMESPACE_STR,
+            //#endif
+            // code, msg);
 
-            
+
         }
 
         public void returnSessionID()
@@ -377,32 +406,37 @@ namespace HttpService.Lib
             bool issameSessionID = true;
 
 #if SESSION_CHECK
-        bool isWebQuery = !string.IsNullOrEmpty(QueryString[WEB_GUBUN_KEY]);
+            //bool isWebQuery = !string.IsNullOrEmpty(QueryString[WEB_GUBUN_KEY]);
+            //string client_SessionID = QueryString[SESSIONID_KEY_STRING] == null ? string.Empty : QueryString[SESSIONID_KEY_STRING].ToString();
+            //string proc = QueryString[PROC_KEY_STRING] == null ? string.Empty : QueryString[PROC_KEY_STRING].ToString();
+            //string gubun = QueryString[GUBUN_KEY_STRING] == null ? string.Empty : QueryString[GUBUN_KEY_STRING].ToString();
 
-        string client_SessionID = QueryString[SESSIONID_KEY_STRING] == null ? string.Empty : QueryString[SESSIONID_KEY_STRING].ToString();
-        string proc = QueryString[PROC_KEY_STRING] == null ? string.Empty : QueryString[PROC_KEY_STRING].ToString();
-        string gubun = QueryString[GUBUN_KEY_STRING] == null ? string.Empty : QueryString[GUBUN_KEY_STRING].ToString();
-        bool is예외상황 = isWebQuery || gubun.Equals(USER_LOGIN_GUBUN) || gubun.Equals(GET_SESSIONID_GUBUN);//예외는 로그인시 및 test를 위한 sessionid check시에만 사용함.   || (gubun.Equals(GET_USER_INFO_GUBUN) && gubun.Equals(USER_R_DETAIL_GUBUN));
+            bool isWebQuery = !string.IsNullOrEmpty(requestData.Web_gubun);
+            string client_SessionID = requestData.SessionId;
+            string proc = requestData.Proc;
+            string gubun = requestData.Gubun;
 
-        if (!is예외상황 && !client_SessionID.Equals(this.sessionID))
-        {
-            if (autoMessage)
+            bool is예외상황 = isWebQuery || gubun.Equals(USER_LOGIN_GUBUN) || gubun.Equals(GET_SESSIONID_GUBUN);//예외는 로그인시 및 test를 위한 sessionid check시에만 사용함.   || (gubun.Equals(GET_USER_INFO_GUBUN) && gubun.Equals(USER_R_DETAIL_GUBUN));
+
+            if (!is예외상황 && !client_SessionID.Equals(this.sessionID))
             {
-                string xmldata = XMLHeader;
-                if (client_SessionID.Equals(string.Empty))
+                if (autoMessage)
                 {
-                    xmldata += this.returnErrorMSGXML(SESSIONID_KEY_STRING + "값을 넘기지 않았습니다.");
-                }
-                else
-                {
-                    xmldata += this.returnMSGXML("999", "서버와의 세션유지시간이 초과하였습니다.");
+                    string xmldata = XMLHeader;
+                    if (client_SessionID.Equals(string.Empty))
+                    {
+                        xmldata += this.returnErrorMSGXML(SESSIONID_KEY_STRING + "값을 넘기지 않았습니다.");
+                    }
+                    else
+                    {
+                        xmldata += this.returnMSGXML("999", "서버와의 세션유지시간이 초과하였습니다.");
+                    }
+
+                    this.ResponseWrite(xmldata);
                 }
 
-                this.ResponseWrite(xmldata);
+                issameSessionID = false;//sessionID가 다르면 데이터를 처리하지 않고 에러메시지를 리턴한다.
             }
-
-            issameSessionID = false;//sessionID가 다르면 데이터를 처리하지 않고 에러메시지를 리턴한다.
-        }
 #endif
 
             return issameSessionID;
@@ -417,9 +451,11 @@ namespace HttpService.Lib
         {
             get
             {
-                string client_SessionID = QueryString[SESSIONID_KEY_STRING] == null ?
-                    string.Empty :
-                    QueryString[SESSIONID_KEY_STRING].ToString();
+                //string client_SessionID = QueryString[SESSIONID_KEY_STRING] == null ?
+                //    string.Empty :
+                //    QueryString[SESSIONID_KEY_STRING].ToString();
+
+                string client_SessionID = requestData.SessionId ?? String.Empty;
 
                 return client_SessionID;
             }
@@ -442,7 +478,10 @@ namespace HttpService.Lib
         /// <param name="include_sessionID"></param>
         public ResponseModel WriteXML(string proc, SqlParameter[] sqlparams, bool include_sessionID)
         {
-            Dictionary<string, IEnumerable<dynamic>> dataSetProxy = new Dictionary<string, IEnumerable<dynamic>>();
+            //Dictionary<string, IEnumerable<DynamicRow>> dataSetProxy = new Dictionary<string, IEnumerable<DynamicRow>>();
+
+            var dataSetProxy = new Dictionary<string, IEnumerable<Dictionary<string, object>>>();
+
             DataSet result_ds = this.ReturnDataSet_Common(proc, sqlparams, include_sessionID);
 
             result_ds.DataSetName = DATASET_NAME;
@@ -453,7 +492,8 @@ namespace HttpService.Lib
             {
                 result_ds.Tables[0].TableName = TABLE_NAME;
                 result_ds.Tables[0].ToDynamicEnumerable();
-                dataSetProxy.Add(result_ds.Tables[0].TableName, result_ds.Tables[0].ToDynamicEnumerable());
+                //dataSetProxy.Add(result_ds.Tables[0].TableName, result_ds.Tables[0].ToDynamicEnumerable());
+                dataSetProxy.Add(result_ds.Tables[0].TableName, result_ds.Tables[0].ToDictionaryEnumerable());
             }
 
             //xml += result_ds.GetXml();
@@ -466,7 +506,9 @@ namespace HttpService.Lib
             _httpContext.Response.End();
             //*/
 
-            return new ResponseModel { DataSet = dataSetProxy };
+            result_ds.Relations.Clear();
+
+            return new ResponseModel { Values = dataSetProxy };
         }
 
         public ResponseModel ReturnMenuXML()
@@ -531,10 +573,13 @@ namespace HttpService.Lib
             _httpContext.Response.End();
             //*/
 
+            ds.Relations.Clear();
+
             return new ResponseModel
             {
-                DataSet = new Dictionary<string, IEnumerable<dynamic>> { 
-                    [dt.TableName] = dt.ToDynamicEnumerable(), 
+                Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>
+                {
+                    [dt.TableName] = dt.ToDictionaryEnumerable(),
                 },
             };
 
@@ -632,7 +677,7 @@ namespace HttpService.Lib
             DataSet return_dataset = null;
 
 #if TRY_CATCH
-        string xml_error_data = XMLHeader; // 에러 메시지 처리
+            string xml_error_data = XMLHeader; // 에러 메시지 처리
 #endif //TRY_CATCH
 
             SqlConnection connection = null;
@@ -641,18 +686,18 @@ namespace HttpService.Lib
 
 
 #if TRY_CATCH
-        try
-        {
+            try
+            {
 #endif //TRY_CATCH
-            connection = this.SQLCONNECTION;
+                connection = this.SQLCONNECTION;
 #if TRY_CATCH
-        }
-        catch (Exception ex)
-        {
-            xml_error_data += this.returnErrorMSGXML("ReturnDataSet_Common.Error check(connection)", ex);
+            }
+            catch (Exception ex)
+            {
+                xml_error_data += this.returnErrorMSGXML("ReturnDataSet_Common.Error check(connection)", ex);
 
-            out_msg = xml_error_data;
-        }
+                out_msg = xml_error_data;
+            }
 #endif //TRY_CATCH
 
 
@@ -662,28 +707,28 @@ namespace HttpService.Lib
 
 
 #if USING_TRANS
-        using (SqlTransaction trans = connection.BeginTransaction())
-        {
+            using (SqlTransaction trans = connection.BeginTransaction())
+            {
 #endif //USING_TRANS
 
 #if TRY_CATCH
-        try
-        {
+                try
+                {
 #endif //TRY_CATCH
 
-            DataSet ds = new DataSet();
+                    DataSet ds = new DataSet();
 
 #if USING_TRANS
-                if (sqlparams != null && sqlparams.Length > 0)
-                {
-                    ds = SqlHelper.ExecuteDataset(trans, CommandType.StoredProcedure, proc_name, sqlparams);
-                }
-                else
-                {
-                    ds = SqlHelper.ExecuteDataset(trans, CommandType.StoredProcedure, proc_name);
-                }
+                    if (sqlparams != null && sqlparams.Length > 0)
+                    {
+                        ds = SqlHelper.ExecuteDataset(trans, CommandType.StoredProcedure, proc_name, sqlparams);
+                    }
+                    else
+                    {
+                        ds = SqlHelper.ExecuteDataset(trans, CommandType.StoredProcedure, proc_name);
+                    }
 
-                trans.Commit();
+                    trans.Commit();
 #else
             if (sqlparams != null && sqlparams.Length > 0)
             {
@@ -701,72 +746,73 @@ namespace HttpService.Lib
 
 #if RETURN_xmlns_SESSIONID
 #else
-            //*
-            DataTable dt;
-            DataRow[] drs = null;
+                    //*
+                    DataTable dt;
+                    DataRow[] drs = null;
 
-            if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0 && ds.Tables[0].Columns.Contains("return_code"))
-            {
-                dt = ds.Tables[0];
-                drs = dt.Select("return_code = 1");
-            }
+                    if (ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0 && ds.Tables[0].Columns.Contains("return_code"))
+                    {
+                        dt = ds.Tables[0];
+                        drs = dt.Select("return_code = 1");
+                    }
 
-            string web_gubun = QueryString[WEB_GUBUN_KEY];
+                    //string web_gubun = QueryString[WEB_GUBUN_KEY];
+                    string web_gubun = requestData.Web_gubun;
 
-            //*/
-            if (include_sessionID && drs != null && drs.Length > 0)
-            {
+                    //*/
+                    if (include_sessionID && drs != null && drs.Length > 0)
+                    {
 #endif
-                string ns = this.sessionID;
-                ds.Namespace = ns;
+                        string ns = this.sessionID;
+                        ds.Namespace = ns;
 #if RETURN_xmlns_SESSIONID
 #else
 
-            }
-            //*
-            else if (!string.ReferenceEquals(web_gubun, null))
-            {
-            }
-            else
-            {
-                //string ns = NAMESPACE_STR;
-                //ds.Namespace = ns;
-            }
-            //*/
+                    }
+                    //*
+                    else if (!string.ReferenceEquals(web_gubun, null))
+                    {
+                    }
+                    else
+                    {
+                        //string ns = NAMESPACE_STR;
+                        //ds.Namespace = ns;
+                    }
+                    //*/
 #endif
-            return_dataset = ds;
+                    return_dataset = ds;
 #if TRY_CATCH
-        }
-        catch (Exception ex)
-        {
+                }
+                catch (Exception ex)
+                {
 #if USING_TRANS
 
-                trans.Rollback();
+                    trans.Rollback();
 
 #endif //USING_TRANS
 
-            if (connection != null)
-                connection.Dispose();
+                    if (connection != null)
+                        connection.Dispose();
 
-            xml_error_data += this.returnErrorMSGXML("ReturnDataSet_Common.Error check(ExecuteDataset)", ex);
+                    xml_error_data += this.returnErrorMSGXML("ReturnDataSet_Common.Error check(ExecuteDataset)", ex);
 
-            out_msg = xml_error_data;
-        }
-        finally
-        {
+                    out_msg = xml_error_data;
+                }
+                finally
+                {
 #endif //TRY_CATCH
-            if (connection != null)
-                connection.Dispose();
+                    if (connection != null)
+                        connection.Dispose();
 #if TRY_CATCH
 
-        }
+                }
 #endif
-            error_msg = out_msg;
+                error_msg = out_msg;
 
-            return return_dataset;
+                return return_dataset;
 #if USING_TRANS
 
-        }
+            }
 #endif
         }
 
@@ -790,6 +836,29 @@ namespace HttpService.Lib
             return ds;
         }
 
+        private void UpdateRequestData()
+        {
+            var data = String.Empty;
+            using (var reader = new StreamReader(_httpContext.Request.Body))
+            {
+                data = reader.ReadToEnd();
+                reader.Close();
+            }
+
+            requestData = new RequestModel();
+            if (!String.IsNullOrWhiteSpace(data))
+            {
+                requestData = System.Text.Json.JsonSerializer.Deserialize<RequestModel>(data, new System.Text.Json.JsonSerializerOptions
+                {
+                    AllowTrailingCommas = true,
+                    IgnoreNullValues = true,
+                    PropertyNameCaseInsensitive = true,
+
+                });
+            }
+        }
+
+        private RequestModel requestData;
         private readonly AppOptions appOptions;
     }
 }
