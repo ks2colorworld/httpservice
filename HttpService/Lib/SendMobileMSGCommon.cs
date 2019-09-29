@@ -192,7 +192,7 @@ namespace HttpService.Lib
                 //    temp_param.Add(new SqlParameter("@" + pKey, xmlCommonUtil.QueryString[pKey].ToString()));
                 //}
 
-                if (xmlCommonUtil.RequestData.ContainsKey(pKey))
+                if (xmlCommonUtil.RequestData.HasKey(pKey))
                 {
                     temp_param.Add(new SqlParameter("@" + pKey, xmlCommonUtil.RequestData.GetValue(pKey)));
                 }             
@@ -366,7 +366,7 @@ namespace HttpService.Lib
                 //    MSGType.SMS :
                 //    (MSGType)Enum.Parse(typeof(MSGType), xmlCommonUtil.QueryString[MSG_TYPE_key]);
 
-                if (xmlCommonUtil.RequestData.ContainsKey(MSG_TYPE_key))
+                if (xmlCommonUtil.RequestData.HasKey(MSG_TYPE_key))
                 {
                     return (MSGType)Enum.Parse(typeof(MSGType), xmlCommonUtil.RequestData.GetValue(MSG_TYPE_key));
                 }

@@ -140,8 +140,8 @@ namespace HttpService.Lib
                 //string proc_gubun = QueryString[PROC_KEY_STRING];
                 //string web_gubun = QueryString[WEB_GUBUN_KEY];
 
-                string proc_gubun = requestData.Proc;
-                string web_gubun = requestData.Web_gubun;
+                string proc_gubun = requestData.GetValue(PROC_KEY_STRING);
+                string web_gubun = requestData.GetValue(WEB_GUBUN_KEY);
 
                 bool isWebQuery = false;
                 bool isAllowProc = false;
@@ -183,7 +183,7 @@ namespace HttpService.Lib
                 //    string.Empty :
                 //    this.QueryString[GUBUN_KEY_STRING].ToString();
 
-                return requestData.Gubun ?? String.Empty;
+                return requestData.GetValue(GUBUN_KEY_STRING);
 
             }
         }
@@ -196,7 +196,7 @@ namespace HttpService.Lib
                 //    string.Empty :
                 //    this.QueryString[WEB_GUBUN_KEY].ToString();
 
-                return requestData.Web_gubun ?? String.Empty;
+                return requestData.GetValue(WEB_GUBUN_KEY) ?? String.Empty;
             }
         }
 
@@ -411,10 +411,10 @@ namespace HttpService.Lib
             //string proc = QueryString[PROC_KEY_STRING] == null ? string.Empty : QueryString[PROC_KEY_STRING].ToString();
             //string gubun = QueryString[GUBUN_KEY_STRING] == null ? string.Empty : QueryString[GUBUN_KEY_STRING].ToString();
 
-            bool isWebQuery = !string.IsNullOrEmpty(requestData.Web_gubun);
-            string client_SessionID = requestData.SessionId;
-            string proc = requestData.Proc;
-            string gubun = requestData.Gubun;
+            bool isWebQuery = !string.IsNullOrEmpty(requestData.GetValue(WEB_GUBUN_KEY));
+            string client_SessionID = requestData.GetValue(SESSIONID_KEY_STRING);
+            string proc = requestData.GetValue(PROC_KEY_STRING);
+            string gubun = requestData.GetValue(GUBUN_KEY_STRING);
 
             bool is예외상황 = isWebQuery || gubun.Equals(USER_LOGIN_GUBUN) || gubun.Equals(GET_SESSIONID_GUBUN);//예외는 로그인시 및 test를 위한 sessionid check시에만 사용함.   || (gubun.Equals(GET_USER_INFO_GUBUN) && gubun.Equals(USER_R_DETAIL_GUBUN));
 
@@ -455,7 +455,7 @@ namespace HttpService.Lib
                 //    string.Empty :
                 //    QueryString[SESSIONID_KEY_STRING].ToString();
 
-                string client_SessionID = requestData.SessionId ?? String.Empty;
+                string client_SessionID = requestData.GetValue(SESSIONID_KEY_STRING);
 
                 return client_SessionID;
             }
@@ -757,7 +757,7 @@ namespace HttpService.Lib
                     }
 
                     //string web_gubun = QueryString[WEB_GUBUN_KEY];
-                    string web_gubun = requestData.Web_gubun;
+                    string web_gubun = requestData.GetValue(WEB_GUBUN_KEY);
 
                     //*/
                     if (include_sessionID && drs != null && drs.Length > 0)

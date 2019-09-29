@@ -13,10 +13,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace HttpService.Middlewares
 {
@@ -31,9 +30,9 @@ namespace HttpService.Middlewares
         {
             app.Use(async (context, next) =>
             {
-                 string[] noCheckSessionIDGubun = {
-                    "menu_ctrl_bind",
-                 };
+                string[] noCheckSessionIDGubun = {
+                "menu_ctrl_bind",
+            };
 
                 if (context.Request.Method.ToLower() == "post")
                 {
@@ -53,25 +52,24 @@ namespace HttpService.Middlewares
                     RequestModel model = new RequestModel();
                     if (!String.IsNullOrWhiteSpace(data))
                     {
-                        model = System.Text.Json.JsonSerializer.Deserialize<RequestModel>(data, new System.Text.Json.JsonSerializerOptions
-                        {
+                        var jsonSerializerOptions= new JsonSerializerOptions {
                             AllowTrailingCommas = true,
                             IgnoreNullValues = true,
                             PropertyNameCaseInsensitive = true,
-                            
-                        });
+                            MaxDepth = 2,
+                        };
 
-                        //model =Newtonsoft.Json.JsonConvert.DeserializeObject<RequestModel>(data, new Newtonsoft.Json.JsonSerializerSettings
-                        //{
-                        //    NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
-                        //});
-                    }
-                    
+                        jsonSerializerOptions.Converters.Add(new HttpService.Serializer.RequestModelJsonConverter());
+
+                        model = JsonSerializer.Deserialize<RequestModel>(data, jsonSerializerOptions);
+                    }                  
+
                     xmlCommonUtil.SetReqestModel(model);
 
-                    string gubun = xmlCommonUtil.GUBUN;                    
+                    string gubun = xmlCommonUtil.GUBUN;
 
-                    Func<bool> passCheckSessionIDFunc = () => {
+                    Func<bool> passCheckSessionIDFunc = () =>
+                    {
                         bool isPass = false;
                         for (int i = 0; i < noCheckSessionIDGubun.Length; i++)
                         {
@@ -172,7 +170,8 @@ namespace HttpService.Middlewares
                         /*기본 xml return *********************************/
                         default:
                             //if (!string.IsNullOrEmpty(xmlCommonUtil.QueryString[XMLCommonUtil.PROC_KEY_STRING]))
-                            if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.Proc))
+                            //if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.Proc))
+                            if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.PROC_KEY_STRING)))
                             {
                                 var dataResult = xmlCommonUtil.WriteXML(false);
 
@@ -198,26 +197,6 @@ namespace HttpService.Middlewares
         }
 
 
-       
+
     }
-
-    //public class DictionaryConverter : JsonConverter<RequestModel>
-    //{
-    //    public override bool CanConvert(Type typeToConvert)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    public override RequestModel Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    //    {
- 
-
-            
-    //    }
-
-    //    public override void Write(Utf8JsonWriter writer, RequestModel value, JsonSerializerOptions options)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-    //}
 }

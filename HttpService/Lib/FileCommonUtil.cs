@@ -592,14 +592,14 @@ namespace HttpService.Lib
             temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_IP_GUBUN, _httpContext.Connection.RemoteIpAddress.ToString()));
 
             //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.OPERATOR_KEY_GUBUN]));
-            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.RequestData.Operator_key));
+            temp_param.Add(new SqlParameter("@" + XMLCommonUtil.OPERATOR_KEY_GUBUN, xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.OPERATOR_KEY_GUBUN)));
 
             //*
             bool include_organization_key = XMLCommonUtil.INCLUDE_ORGANIZATION_KEY;
             if (include_organization_key)
             {
                 //temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.QueryString[XMLCommonUtil.ORGANIZATION_KEY_GUBUN].ToString()));
-                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.RequestData.Organization_key));
+                temp_param.Add(new SqlParameter("@" + XMLCommonUtil.ORGANIZATION_KEY_GUBUN, xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.ORGANIZATION_KEY_GUBUN)));
             }
             //*/
 

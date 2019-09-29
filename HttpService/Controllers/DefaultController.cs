@@ -118,7 +118,7 @@ namespace HttpService.Controllers
                 /*기본 xml return *********************************/
                 default:
                     //if (!string.IsNullOrEmpty(xmlCommonUtil.QueryString[XMLCommonUtil.PROC_KEY_STRING]))
-                        if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.Proc))
+                        if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.PROC_KEY_STRING)))
                         {
                         var dataResult = xmlCommonUtil.WriteXML(false);
                         return Ok(dataResult);
