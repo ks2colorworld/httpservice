@@ -23,22 +23,50 @@ namespace HttpService
         {
             ISerializer serializer = null;
             var contentType = context.Request.Headers["Accept"];
-            if ("text/xml" == contentType)
-            {
-                serializer = new XmlSerializer();
-            }
-            
-            if("application/json" == contentType)
-            {
-                serializer = new JsonSerializer();
-            }
 
-            if (serializer != null)
+            if (model is FileResponseModel)
             {
-                var content = serializer.Serialize(model);
+                var fileResponseModel = (FileResponseModel)model;
+                // 파일 응답
+                context.Response.Headers[""] = fileResponseModel.FileName;
+                if (context.Response.Headers.ContainsKey("Content-Disposition"))
+                {
+                    context.Response.Headers.Remove("Content-Disposition");
+                    //_httpContext.Response.AddHeader("Content-Disposition", "attachment;filename=" + _httpContext.Server.UrlPathEncode(fileInfo.Name));
+                    //_httpContext.Response.ContentType = "multipart/form-data";
+                }
+                context.Response.Headers.Add("Content-Disposition", $"attachment;filename={Uri.EscapeUriString(fileResponseModel.FileName)}");
 
-                context.Response.Headers["content-type"] = contentType;
-                return context.Response.WriteAsync(content);
+                //if (context.Response.Headers.ContainsKey("Content-Type"))
+                //{
+                //    context.Response.Headers.Remove("Content-Type");
+                //}
+                //context.Response.Headers.Add("Content-Type", fileResponseModel.ContentType);
+                context.Response.ContentType = fileResponseModel.ContentType;
+                context.Response.BodyWriter.WriteAsync(fileResponseModel.Content);
+
+            }
+            else
+            {
+                // 데이터 응답
+
+                if ("text/xml" == contentType)
+                {
+                    serializer = new XmlSerializer();
+                }
+
+                if ("application/json" == contentType)
+                {
+                    serializer = new JsonSerializer();
+                }
+
+                if (serializer != null)
+                {
+                    var content = serializer.Serialize(model);
+
+                    context.Response.Headers["content-type"] = contentType;
+                    return context.Response.WriteAsync(content);
+                }
             }
 
             return Task.CompletedTask;

@@ -127,6 +127,7 @@ namespace HttpService.Lib
         {
             get
             {
+                // TODO Session 객체에 guid 값을 설정하는 코드가 없습니다.
                 return _httpContext.Session.GetString("guid");
                 //return this.Session.SessionID;
                 //return _httpContext.Session["guid"].ToString();
@@ -165,6 +166,8 @@ namespace HttpService.Lib
                 {
                     string errorMSG = XMLHeader + this.returnErrorMSGXML("실행이 허가되지 않았거나, 유효하지 않은 프로시져명입니다.");
 
+                    throw new ServiceException("실행이 허가되지 않았거나, 유효하지 않은 프로시져명입니다.");
+
                     this.ResponseWrite(errorMSG);
                     return null;
                 }
@@ -173,6 +176,56 @@ namespace HttpService.Lib
                     return DB_SCHEMA + "." + proc_gubun;
                 }
             }
+        }
+
+        private string GetProcedureName()
+        {
+            //string proc_gubun = QueryString[PROC_KEY_STRING];
+            //string web_gubun = QueryString[WEB_GUBUN_KEY];
+
+            string proc_gubun = requestData.GetValue(PROC_KEY_STRING);
+            string web_gubun = requestData.GetValue(WEB_GUBUN_KEY);
+
+            bool isWebQuery = false;
+            bool isAllowProc = false;
+
+            if (!string.ReferenceEquals(web_gubun, null))
+            {
+                isWebQuery = true;
+
+                //*
+                foreach (string str in this.allowProc)
+                {
+                    if (string.Equals(str, proc_gubun))
+                    {
+                        isAllowProc = true;
+                        break;
+                    }
+                }//*/
+            }
+
+            //if ((isWebQuery && !isAllowProc) || string.ReferenceEquals(proc_gubun, null))
+            if (ShoulNotGetProcedureName(isWebQuery, isAllowProc, proc_gubun))
+            {
+                string errorMSG = XMLHeader + this.returnErrorMSGXML("실행이 허가되지 않았거나, 유효하지 않은 프로시져명입니다.");
+
+                throw new ServiceException("실행이 허가되지 않았거나, 유효하지 않은 프로시져명입니다.");
+
+                //this.ResponseWrite(errorMSG);
+                //return null;
+            }
+
+
+            return DB_SCHEMA + "." + proc_gubun;
+        }
+
+        private bool ShoulNotGetProcedureName(bool isWebQuery, bool isAllowProc, string proc_gubun)
+        {
+            if((isWebQuery && !isAllowProc)) { return true; }
+
+            if (String.IsNullOrWhiteSpace(proc_gubun)) { return true; }
+
+            return false;
         }
 
         public string GUBUN
@@ -200,38 +253,38 @@ namespace HttpService.Lib
             }
         }
 
-//        public Dictionary<string, string> QueryString
-//        {
-//            get
-//            {
-//                Dictionary<string, string> requestValues = new Dictionary<string, string>();
+        //        public Dictionary<string, string> QueryString
+        //        {
+        //            get
+        //            {
+        //                Dictionary<string, string> requestValues = new Dictionary<string, string>();
 
-//                string httpMethod = _httpContext.Request.Method.ToUpper();
-//                switch (httpMethod)
-//                {
-//                    case "POST":
-//                        //return return _httpContext.Request.Form;
-//                        requestValues = _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
+        //                string httpMethod = _httpContext.Request.Method.ToUpper();
+        //                switch (httpMethod)
+        //                {
+        //                    case "POST":
+        //                        //return return _httpContext.Request.Form;
+        //                        requestValues = _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
 
-//                        break;
-//#if USING_GET
-//                    case "GET":
-//                        //return _httpContext.Request.QueryString.;
-//                        requestValues = _httpContext.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString());
-//                        break;
-//                    default:
-//                        //_httpContext.Request.RouteValues.Params;
-//                        break;
-//#else
-//                            default:
-//                               requestValues= _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
-//                                break;
-//#endif
-//                }
+        //                        break;
+        //#if USING_GET
+        //                    case "GET":
+        //                        //return _httpContext.Request.QueryString.;
+        //                        requestValues = _httpContext.Request.Query.ToDictionary(item => item.Key, item => item.Value.ToString());
+        //                        break;
+        //                    default:
+        //                        //_httpContext.Request.RouteValues.Params;
+        //                        break;
+        //#else
+        //                            default:
+        //                               requestValues= _httpContext.Request.Form.ToDictionary(item => item.Key, item => item.Value.ToString());
+        //                                break;
+        //#endif
+        //                }
 
-//                return requestValues;
-//            }
-//        }
+        //                return requestValues;
+        //            }
+        //        }
 
         public SqlConnection SQLCONNECTION
         {
@@ -372,9 +425,9 @@ namespace HttpService.Lib
                                 ["Code"] = code,
                                 ["Message"] = msg,
                             }
-                        }  
+                        }
                     }
-                }                
+                }
             };
 
             //            return string.Format(MSG_XML,
@@ -388,9 +441,9 @@ namespace HttpService.Lib
 
         }
 
-        public void returnSessionID()
+        public ResponseModel returnSessionID()
         {
-            this.ResponseWriteMSG("1", this.sessionID);
+            return this.ResponseWriteMSG("1", this.sessionID);
 
             /*
             string xmldata = XMLHeader;
@@ -401,6 +454,7 @@ namespace HttpService.Lib
             _httpContext.Response.End();
             //*/
         }
+
         public bool CheckSessionID(bool autoMessage)
         {
             bool issameSessionID = true;
@@ -483,6 +537,11 @@ namespace HttpService.Lib
             var dataSetProxy = new Dictionary<string, IEnumerable<Dictionary<string, object>>>();
 
             DataSet result_ds = this.ReturnDataSet_Common(proc, sqlparams, include_sessionID);
+
+            if(result_ds == null || result_ds.Tables.Count == 0)
+            {
+                throw new ServiceException("데이터가 존재하지 않습니다.");
+            }
 
             result_ds.DataSetName = DATASET_NAME;
 

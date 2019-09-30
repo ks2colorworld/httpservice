@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 
@@ -23,90 +24,112 @@ namespace HttpService.Middlewares
     {
         public static void UseDefault(this IApplicationBuilder app)
         {
-            app.Map("", DefaultHandler);
+            app.MapWhen((context) =>
+            {
+                var defaultPaths = new[] { "/", "/Default", "/Default.aspx" };
+
+                return context.Request.Path.HasValue && defaultPaths.Contains(context.Request.Path.Value, new PathComparer());
+            }, DefaultHandler);
+
+            //app.Map(new PathString("/Default.aspx"), DefaultHandler);
+            //app.Map(new PathString("/Default"), DefaultHandler);            
+            //app.Map(new PathString(""), DefaultHandler);
         }
 
         private static void DefaultHandler(IApplicationBuilder app)
         {
-            app.Use(async (context, next) =>
+
+
+            app.Run(async (context) =>
             {
-                string[] noCheckSessionIDGubun = {
-                "menu_ctrl_bind",
-            };
-
-                if (context.Request.Method.ToLower() == "post")
+                if (context.Request.Path.HasValue)
                 {
-                    var xmlCommonUtil = app.ApplicationServices.GetService<XMLCommonUtil>();
-                    var excelDownload = app.ApplicationServices.GetService<ExcelDownload>();
-                    var sendMobileMSGCommon = app.ApplicationServices.GetService<SendMobileMSGCommon>();
-                    var sendEmail = app.ApplicationServices.GetService<SendEmail>();
-                    var uploadAndPostTwitPic = app.ApplicationServices.GetService<UploadAndPostTwitPic>();
+                    var path = context.Request.Path.Value;
+                }
 
-                    var data = String.Empty;
-                    using (var reader = new StreamReader(context.Request.Body))
+                string[] noCheckSessionIDGubun = {
+                    "menu_ctrl_bind",
+                };
+
+                var requestDataParser = app.ApplicationServices.GetService<RequestDataParser>();
+                var xmlCommonUtil = app.ApplicationServices.GetService<XMLCommonUtil>();
+                var excelDownload = app.ApplicationServices.GetService<ExcelDownload>();
+                var sendMobileMSGCommon = app.ApplicationServices.GetService<SendMobileMSGCommon>();
+                var sendEmail = app.ApplicationServices.GetService<SendEmail>();
+                var uploadAndPostTwitPic = app.ApplicationServices.GetService<UploadAndPostTwitPic>();
+
+                RequestModel model = new RequestModel();
+
+                model = await requestDataParser.Parse();
+
+                //if (context.Request.Method.ToLower() == "post")
+                //{
+                //    var data = String.Empty;
+                //    using (var reader = new StreamReader(context.Request.Body))
+                //    {
+                //        data = await reader.ReadToEndAsync();
+                //        reader.Close();
+                //    }
+                //    if (!String.IsNullOrWhiteSpace(data))
+                //    {
+                //        var jsonSerializerOptions = new JsonSerializerOptions
+                //        {
+                //            AllowTrailingCommas = true,
+                //            IgnoreNullValues = true,
+                //            PropertyNameCaseInsensitive = true,
+                //            MaxDepth = 2,
+                //        };
+                //        jsonSerializerOptions.Converters.Add(new HttpService.Serializer.RequestModelJsonConverter());
+                //        model = JsonSerializer.Deserialize<RequestModel>(data, jsonSerializerOptions);
+                //    }
+                //}
+
+                xmlCommonUtil.SetReqestModel(model);
+
+                string gubun = xmlCommonUtil.GUBUN;
+
+                Func<bool> passCheckSessionIDFunc = () =>
+                {
+                    bool isPass = false;
+                    for (int i = 0; i < noCheckSessionIDGubun.Length; i++)
                     {
-                        data = await reader.ReadToEndAsync();
-                        reader.Close();
-                    }
-
-                    RequestModel model = new RequestModel();
-                    if (!String.IsNullOrWhiteSpace(data))
-                    {
-                        var jsonSerializerOptions= new JsonSerializerOptions {
-                            AllowTrailingCommas = true,
-                            IgnoreNullValues = true,
-                            PropertyNameCaseInsensitive = true,
-                            MaxDepth = 2,
-                        };
-
-                        jsonSerializerOptions.Converters.Add(new HttpService.Serializer.RequestModelJsonConverter());
-
-                        model = JsonSerializer.Deserialize<RequestModel>(data, jsonSerializerOptions);
-                    }                  
-
-                    xmlCommonUtil.SetReqestModel(model);
-
-                    string gubun = xmlCommonUtil.GUBUN;
-
-                    Func<bool> passCheckSessionIDFunc = () =>
-                    {
-                        bool isPass = false;
-                        for (int i = 0; i < noCheckSessionIDGubun.Length; i++)
+                        if (noCheckSessionIDGubun[i] == xmlCommonUtil.GUBUN)
                         {
-                            if (noCheckSessionIDGubun[i] == xmlCommonUtil.GUBUN)
-                            {
-                                isPass = true;
-                                break;
-                            }
+                            isPass = true;
+                            break;
                         }
-                        return isPass;
-                    };
-
-                    var PassCheckSessionID = passCheckSessionIDFunc();
-
-                    if (!xmlCommonUtil.CheckSessionID() && !PassCheckSessionID)
-                    {
-                        // TODO 반환값 정의
-                        //return StatusCode(401);
-                        context.Response.StatusCode = 401;
                     }
+                    return isPass;
+                };
 
+                var PassCheckSessionID = passCheckSessionIDFunc();
+
+                if (!xmlCommonUtil.CheckSessionID() && !PassCheckSessionID)
+                {
+                    // TODO 반환값 정의
+                    //return StatusCode(401);
+                    context.Response.StatusCode = 401;
+                }
+
+                ResponseModel responseModel = null;
+                try
+                {
                     switch (gubun)
                     {
                         //sessionID_check
                         case XMLCommonUtil.SESSIONID_CHECK_GUBUN:
                         case XMLCommonUtil.GET_SESSIONID_GUBUN:
-                            xmlCommonUtil.returnSessionID();
+                            responseModel = xmlCommonUtil.returnSessionID();
                             break;
                         //userlogin
                         case XMLCommonUtil.USER_LOGIN_GUBUN:
-                            var userLoginData = xmlCommonUtil.WriteXML(true);
+                            responseModel = xmlCommonUtil.WriteXML(true);
 
                             //return Ok(userLoginData);
                             break;
                         //break;
                         case "menu_ctrl_bind":
-                            xmlCommonUtil.ReturnMenuXML();
+                            responseModel = xmlCommonUtil.ReturnMenuXML();
                             break;
 
                         /*/sendSMS - 사용안함.
@@ -130,7 +153,7 @@ namespace HttpService.Middlewares
                         case "send_sms":
                             //SendMobileMSGCommon smmc = new SendMobileMSGCommon();
                             //smmc.SendMobileMSG();
-                            sendMobileMSGCommon.SendMobileMSG();
+                            responseModel = sendMobileMSGCommon.SendMobileMSG();
                             break;
 
                         case "csv":
@@ -173,12 +196,11 @@ namespace HttpService.Middlewares
                             //if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.Proc))
                             if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.PROC_KEY_STRING)))
                             {
-                                var dataResult = xmlCommonUtil.WriteXML(false);
+                                //var dataResult 
+                                responseModel = xmlCommonUtil.WriteXML(false);
 
                                 //dataResult = ResponseModel.Sampe;
                                 //dataResult = ResponseModel.Empty;
-
-                                await context.ExecuteResponseModelResult(dataResult);
                             }
                             else
                             {
@@ -188,15 +210,98 @@ namespace HttpService.Middlewares
                             }
                             break;
                     }
-
-                    return;
+                }
+                //catch (ServiceException ex)
+                //{
+                //    responseModel = ResponseModel.ErrorMessage(ex);
+                //}
+                catch (Exception ex)
+                {
+                    responseModel = ResponseModel.ErrorMessage(ex);
                 }
 
-                await next.Invoke();
+                if (responseModel == null)
+                {
+                    responseModel = ResponseModel.DefaultMessage;
+                }
+
+                await context.ExecuteResponseModelResult(responseModel);
+
+                return;
+
+
+                //await next.Invoke();
             });
         }
 
+        private static void FileHandler(IApplicationBuilder app)
+        {
+            app.Run(async (context) =>
+            {
+                var requestDataParser = app.ApplicationServices.GetService<RequestDataParser>();
+                var xmlCommonUtil = app.ApplicationServices.GetService<XMLCommonUtil>();
+                var fileCommonUtil = app.ApplicationServices.GetService<FileCommonUtil>();
 
+                string gubun = xmlCommonUtil.GUBUN;
+                string webGubun = xmlCommonUtil.WEB_GUBUN;
+                RequestModel requestModel = null;
+                ResponseModel responseModel = null;
+                try
+                {
+                    requestModel = await requestDataParser.Parse();
+                    xmlCommonUtil.SetReqestModel(requestModel);
+
+                    bool passCheckSessionID = (gubun == "web" && webGubun != string.Empty);
+
+                    if (passCheckSessionID)
+                    {
+                        gubun = webGubun;
+                    }
+
+                    if (!(passCheckSessionID || xmlCommonUtil.CheckSessionID()))
+                    {
+                        //세션 채크함.
+                        return;
+                    }                    
+
+                    switch (gubun)
+                    {
+                        case FileCommonUtil.FILE_DOWNLOAD_GUBUN_value:
+                            responseModel = fileCommonUtil.DownloadFile();
+                            break;
+                        case FileCommonUtil.FILE_DELETE_GUBUN_value:
+                            responseModel = fileCommonUtil.DeleteFile();
+                            break;
+
+                        case FileCommonUtil.FILE_INFO_GUBUN_value:
+                            responseModel = fileCommonUtil.GetFileInfo();
+                            break;
+
+                        case FileCommonUtil.FILE_LIST_GUBUN_value:
+                            responseModel = fileCommonUtil.GetFileNameList();
+                            break;
+                        case FileCommonUtil.FILE_RENAME_GUBUN_value:
+                            responseModel = fileCommonUtil.FileRename();
+                            break;
+                    }
+                }
+                //catch(ServiceException ex)
+                //{
+                //    responseModel = ResponseModel.ErrorMessage(ex);
+                //}
+                catch (Exception ex)
+                {
+                    responseModel = ResponseModel.ErrorMessage(ex);
+                }
+
+                if (responseModel == null)
+                {
+                    responseModel = ResponseModel.DefaultMessage;
+                }
+
+                await context.ExecuteResponseModelResult(responseModel);
+            });
+        }
 
     }
 }

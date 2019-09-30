@@ -121,22 +121,22 @@ namespace HttpService.Lib
             PROC_SEND_MOBILE_MSG_CUD = $"{appOptions.DbSchema}._SendMobileMSG";
         }
 
-        public void SendMobileMSG()
+        public ResponseModel SendMobileMSG()
         {
             if (this.MSG_TYPE == MSGType.MMS)
             {
-                this.SendMMS();
+               return this.SendMMS();
             }
             else
             {
-                this.SendSMS(RECEIVER_PHONE, SENDER_PHONE, SEND_MSG_STRING, SEND_DATE);
+                return this.SendSMS(RECEIVER_PHONE, SENDER_PHONE, SEND_MSG_STRING, SEND_DATE);
             }
         }
 
         //sms발송
-        private void SendSMS(string receiverPhoneNum, string senderPhoneNum, string msg, string datetime)
+        private ResponseModel SendSMS(string receiverPhoneNum, string senderPhoneNum, string msg, string datetime)
         {
-            this.SendSMS(receiverPhoneNum, senderPhoneNum, msg, datetime, this.MSG_TYPE, -1);
+            return this.SendSMS(receiverPhoneNum, senderPhoneNum, msg, datetime, this.MSG_TYPE, -1);
         }
 
         //mms발송 - SendMMS()에서호출

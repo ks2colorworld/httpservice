@@ -124,7 +124,7 @@ namespace HttpService.Lib
             return new FileResponseModel
             {
                 FileName = Uri.EscapeUriString(fileName),
-                ContentType = "text/csv",
+                ContentType = "text/csv; charset=utf-8",
                 ContentEncoding  = Encoding.UTF8,
                 Content = combine,
             };

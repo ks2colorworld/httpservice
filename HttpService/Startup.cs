@@ -43,6 +43,7 @@ namespace HttpService
             services.AddSingleton<IWebHostEnvironment>(_ => HostEnvironment);
             services.AddSingleton<IConfiguration>(_ => Configuration);
 
+            services.AddTransient<RequestDataParser>();
             services.AddTransient<XMLCommonUtil>();
             services.AddTransient<FileCommonUtil>();
             services.AddTransient<ExcelDownload>();

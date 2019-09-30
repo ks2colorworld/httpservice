@@ -35,13 +35,10 @@ namespace HttpService.Models
 
         public string GetValue(string key, string defaultValue = "")
         {
-            //if (Data.Count > 0)
-            //{
-            //    if (Data.ContainsKey(key))
-            //    {
-            //        return Data[key];
-            //    }
-            //}
+            if (Count > 0 && ContainsKey(key))
+            {
+                return this[key];
+            }            
 
             if (Parameters.Count > 0)
             {
@@ -50,25 +47,15 @@ namespace HttpService.Models
                     return Parameters[key];
                 }
             }
-
-            //if(Options.Count > 0) {
-            //    if (Options.ContainsKey(key))
-            //    {
-            //        return Options[key];
-            //    }
-            //}
-
+       
             return defaultValue;
         }
 
         public bool HasKey(string key)
         {
-            if (Count > 0)
+            if (Count > 0 && ContainsKey(key))
             {
-                if (ContainsKey(key))
-                {
-                    return true;
-                }
+                return true;
             }
 
             if (Parameters.Count > 0)
@@ -78,13 +65,6 @@ namespace HttpService.Models
                     return true;
                 }
             }
-
-            //if(Options.Count > 0) {
-            //    if (Options.ContainsKey(key))
-            //    {
-            //       return true;
-            //    }
-            //}
 
             return false;
         }
