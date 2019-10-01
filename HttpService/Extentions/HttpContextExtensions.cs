@@ -44,21 +44,31 @@ namespace HttpService
                 //context.Response.Headers.Add("Content-Type", fileResponseModel.ContentType);
                 context.Response.ContentType = fileResponseModel.ContentType;
                 context.Response.BodyWriter.WriteAsync(fileResponseModel.Content);
-
+                return context.Response.CompleteAsync();
             }
             else
             {
                 // 데이터 응답
-
-                if ("text/xml" == contentType)
+                do
                 {
-                    serializer = new XmlSerializer();
-                }
+                    if ("text/xml" == contentType)
+                    {
+                        serializer = new XmlSerializer();
+                    }
 
-                if ("application/json" == contentType)
-                {
-                    serializer = new JsonSerializer();
+                    if ("application/json" == contentType)
+                    {
+                        serializer = new JsonSerializer();
+                    }
+
+                    if (String.IsNullOrEmpty(contentType))
+                    {
+                        // TODO 응답 형식 기본값으로 설정합니다.
+                        contentType = "text/xml";
+                    }
                 }
+                while (serializer == null);
+
 
                 if (serializer != null)
                 {

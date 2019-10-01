@@ -1,5 +1,6 @@
 ﻿using HttpService.Lib;
 using HttpService.Models;
+using HttpService.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.IO;
 using System.Linq;
@@ -26,14 +28,19 @@ namespace HttpService.Middlewares
         {
             app.MapWhen((context) =>
             {
-                var defaultPaths = new[] { "/", "/Default", "/Default.aspx" };
+                var paths = new[] { "/", "/Default", "/Default.aspx" };
 
-                return context.Request.Path.HasValue && defaultPaths.Contains(context.Request.Path.Value, new PathComparer());
+                return context.Request.Path.HasValue && paths.Contains(context.Request.Path.Value, new PathComparer());
             }, DefaultHandler);
 
-            //app.Map(new PathString("/Default.aspx"), DefaultHandler);
-            //app.Map(new PathString("/Default"), DefaultHandler);            
-            //app.Map(new PathString(""), DefaultHandler);
+            app.MapWhen((context) =>
+            {
+                var paths = new[] { "/File", "/File.aspx" };
+
+                return context.Request.Path.HasValue && paths.Contains(context.Request.Path.Value, new PathComparer());
+            }, FileHandler);
+
+
         }
 
         private static void DefaultHandler(IApplicationBuilder app)
@@ -303,5 +310,162 @@ namespace HttpService.Middlewares
             });
         }
 
+        private static void UploadHandler(IApplicationBuilder app)
+        {
+            app.Run(async (context) => {
+
+                var appOptionsAccessor = app.ApplicationServices.GetService<IOptions<AppOptions>>();
+                var requestDataParser = app.ApplicationServices.GetService<RequestDataParser>();
+                var xmlCommonUtil = app.ApplicationServices.GetService<XMLCommonUtil>();
+                var fileCommon = app.ApplicationServices.GetService<FileCommonUtil>();
+
+                var appOptions = appOptionsAccessor.Value ?? new AppOptions();
+
+                RequestModel requestModel = null;
+                ResponseModel responseModel = null;
+
+                try
+                {
+                    requestModel = await requestDataParser.Parse();
+                    xmlCommonUtil.SetReqestModel(requestModel);
+
+                    /*웹서버 세션 정보 체크*/
+                    string sessionID = xmlCommonUtil.sessionID;
+                    string client_SessionID = xmlCommonUtil.ClientSessionID;
+
+                    if (XMLCommonUtil.SESSION_CHECK && client_SessionID == "")
+                    {
+                        //xmldata += xmlCommonUtil.returnErrorMSGXML("세션정보가 빈값이거나, 세션 정보를 넘기지 않습니다. 로그인 후 사용바랍니다.");
+                        //_context.Response.Write(xmldata);
+                        //return;
+
+                        throw new ServiceException("세션정보가 빈값이거나, 세션 정보를 넘기지 않습니다. 로그인 후 사용바랍니다.");
+                    }
+                    else if (XMLCommonUtil.SESSION_CHECK && sessionID != client_SessionID)
+                    {
+                        //xmldata += xmlCommonUtil.returnErrorMSGXML("세션 정보가 올바르지 않습니다. 다시 로그인한 후 사용바랍니다.");
+                        //_context.Response.Write(xmldata);
+                        //return;
+
+                        throw new ServiceException("세션 정보가 올바르지 않습니다. 다시 로그인한 후 사용바랍니다.");
+                    }
+
+                    /*파일 업로드 갯수 제한*/
+                    if (context.Request.Form.Files.Count == 0)
+                    {
+                        //xmldata += xmlCommonUtil.returnErrorMSGXML("업로드 파일이 없습니다.");
+                        //_context.Response.Write(xmldata);
+                        //return;
+
+                        throw new ServiceException("업로드 파일이 없습니다.");
+                    }
+                    else if (context.Request.Form.Files.Count > 1)
+                    {
+                        //xmldata += xmlCommonUtil.returnErrorMSGXML("파일은 하나씩만 업로드 가능합니다.");
+                        //_context.Response.Write(xmldata);
+                        //return;
+
+                        throw new ServiceException("파일은 하나씩만 업로드 가능합니다.");
+                    }
+
+                    //저장위치를 지정
+                    //string uploadDir = ConfigurationManager.AppSettings["etc"];
+                    var uploadDir = appOptions.Etc;
+
+                    uploadDir = fileCommon.ATTACHMENT_UPLOAD_PATH;
+
+                    //디렉토리 체크
+                    if (!Directory.Exists(uploadDir))
+                    {
+                        try
+                        {
+                            Directory.CreateDirectory(uploadDir);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new ServiceException("파일경로를 만들 수 없습니다.", ex);
+                        }
+                    }
+
+                    // 파일을 저장하고,(+이미지 파일일 경우 섬네일이미지를 생성하고 - 구현안됨)
+
+                    foreach (var file in context.Request.Form.Files)
+                    {
+                        //HttpPostedFile file = _context.Request.Files[fileKey];
+
+                        //파일이름을 지정하여 저장할 것인가? file_name
+                        string namedFileName = xmlCommonUtil.RequestData.GetValue(FileCommonUtil.ATTACHMENT_FILENAME_key);
+                        string fileFullPath = String.Empty;
+
+                        if (!string.IsNullOrEmpty(namedFileName))
+                        {
+                            fileFullPath = uploadDir + namedFileName;
+                        }
+                        else
+                        {
+                            fileFullPath = uploadDir + file.FileName;
+                        }
+
+                        fileFullPath = fileCommon.MakeUniqueFileName(fileFullPath);
+                        //file.SaveAs(fileFullPath);
+
+                        using (var stream = file.OpenReadStream())
+                        {
+                            using (var destinationStream = new FileStream(fileFullPath, FileMode.Create, FileAccess.Write))
+                            {
+                                await stream.CopyToAsync(destinationStream);
+                                await destinationStream.FlushAsync();
+                                destinationStream.Close();
+                            }
+                            stream.Close();
+                        }
+
+                        FileInfo fileInfo = new FileInfo(fileFullPath);
+                        var attachment_filename = fileInfo.Name;
+                        var attachment_fileformat = fileInfo.Extension;
+                        var attachment_filesize = fileInfo.Length;
+
+                        // 디비를 저장하고
+                        // 디비에 저장할 것인가? db_work
+                        string isDBWork = xmlCommonUtil.RequestData.GetValue(FileCommonUtil.DB_WORK_GUBUN_value);
+                        string return_msg = string.Empty;
+                        string resultXML = String.Empty;
+
+                        if (!string.IsNullOrEmpty(isDBWork) && !isDBWork.Equals("pass"))
+                        {
+                            //db_work=pass 명시적으로 표시할 경우 디비 작업 없음.
+                        }
+                        else
+                        {
+                            responseModel = fileCommon.Attachment_C(
+                                attachment_filename,
+                                attachment_fileformat,
+                                attachment_filesize,
+                                out resultXML);
+                        }
+                    }
+
+
+                }
+                catch (ServiceException ex)
+                {
+                    responseModel = ResponseModel.ErrorMessage(ex);
+                }
+                catch (Exception ex)
+                {
+                    responseModel = ResponseModel.Message("100", "파일업로드 에러가 발생했습니다.");
+                    //responseModel = ResponseModel.ErrorMessage(ex);
+                }
+
+                if (responseModel == null)
+                {
+                    responseModel = ResponseModel.DefaultMessage;
+                }
+
+                await context.ExecuteResponseModelResult(responseModel);
+            });
+
+         
+        }
     }
 }

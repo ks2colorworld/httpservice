@@ -6,7 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Data;
-using System.Data.SqlClient;
+//using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Xml;
 using System.IO;
 using Microsoft.Extensions.Options;
@@ -551,10 +552,15 @@ namespace HttpService.Lib
             return returnFileFullPath;
         }
 
-        public string Attachment_C(string filename, string fileformat, long filesize, out string resultXML)
+        public ResponseModel Attachment_C(string filename, string fileformat, long filesize, out string resultXML)
         {
+            var responseModel = new ResponseModel();
+
             string return_resultXML = null;
             string return_string = string.Empty;
+
+            resultXML = String.Empty;
+
             try
             {
                 /*throw new Exception("test_exception");*/
@@ -564,6 +570,13 @@ namespace HttpService.Lib
                     ds.DataSetName = XMLCommonUtil.DATASET_NAME;
                     ds.Tables[0].TableName = XMLCommonUtil.TABLE_NAME;
                     return_resultXML = ds.GetXml();
+
+                    if(ds.Tables.Count > 0)
+                    {
+                        ds.Tables[0].TableName = "item";
+
+                        responseModel.Values.Add("item", ds.Tables[0].ToDictionaryEnumerable());
+                    }
                 }
             }
             catch (Exception ex)
@@ -573,8 +586,9 @@ namespace HttpService.Lib
                 throw new ServiceException("Attachment_C", ex);
             }
 
-            resultXML = return_resultXML;
-            return return_string;
+            //resultXML = return_resultXML;
+            //return return_string;
+            return responseModel;
         }
 
         public void Attachment_D(string attachment_key)

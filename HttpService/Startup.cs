@@ -1,20 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using HttpService.Controllers;
 using HttpService.Lib;
 using HttpService.Middlewares;
-using HttpService.Models;
 using HttpService.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters.Xml;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,6 +33,31 @@ namespace HttpService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddControllers(options =>
+            {
+                //options.EnableEndpointRouting = true;
+
+                //options.AllowEmptyInputInBodyModelBinding = true;
+                //options.RespectBrowserAcceptHeader = false;
+            })
+             .ConfigureApiBehaviorOptions(options =>
+             {
+                 // 바인딩 소스 유추 사용안함
+                 //options.SuppressInferBindingSourcesForParameters = true;
+             })
+             .AddJsonOptions(options =>
+             {
+                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                 options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
+                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                 options.JsonSerializerOptions.IgnoreNullValues = true;
+                 options.JsonSerializerOptions.AllowTrailingCommas = true;
+                 options.JsonSerializerOptions.WriteIndented = true;
+             })
+             .AddXmlDataContractSerializerFormatters()
+             .AddXmlSerializerFormatters()
+             ;
+
             // 의존성 주입
             services.AddSingleton<IHttpContextAccessor>(_ => new HttpContextAccessor());
             services.AddSingleton<IWebHostEnvironment>(_ => HostEnvironment);
@@ -52,7 +72,7 @@ namespace HttpService
             services.AddTransient<Gmail>();
             services.AddTransient<UploadAndPostTwitPic>();
 
-            services.AddTransient<DefaultController>();
+            //services.AddTransient<DefaultController>();
 
             // 구성값
             services.Configure<AppOptions>(options =>
@@ -86,30 +106,9 @@ namespace HttpService
 
             services.AddDistributedMemoryCache();
 
-            services.AddControllers(options =>
-            {
-                //options.EnableEndpointRouting = true;
+            services.AddHealthChecks();
 
-                //options.AllowEmptyInputInBodyModelBinding = true;
-                //options.RespectBrowserAcceptHeader = false;
-            })
-                .ConfigureApiBehaviorOptions(options =>
-                {
-                    // 바인딩 소스 유추 사용안함
-                    //options.SuppressInferBindingSourcesForParameters = true;
-                })
-                .AddJsonOptions(options =>
-                {
-                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
-                    options.JsonSerializerOptions.IgnoreReadOnlyProperties = true;
-                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-                    options.JsonSerializerOptions.IgnoreNullValues = true;
-                    options.JsonSerializerOptions.AllowTrailingCommas = true;
-                    options.JsonSerializerOptions.WriteIndented = true;
-                })
-                .AddXmlDataContractSerializerFormatters()
-                .AddXmlSerializerFormatters()
-            ;
+
 
         }
 
@@ -123,8 +122,6 @@ namespace HttpService
 
             app.UseHttpsRedirection();
 
-
-
             app.UseRouting();
 
             app.UseAuthorization();
@@ -132,9 +129,11 @@ namespace HttpService
             // 세션 사용
             app.UseSession();
 
+            app.UseDefault();
+
             app.UseEndpoints(endpoints =>
             {
-                //endpoints.MapControllers();
+                endpoints.MapControllers();
 
                 //endpoints.MapControllerRoute(
                 //      name: "areaRoute",
@@ -146,55 +145,32 @@ namespace HttpService
                 //        pattern: "{controller}/{action}/{id?}",
                 //        defaults: new { controller = "Default", action = "Index" });
 
+                endpoints.MapHealthChecks("/health");
+
                 endpoints.MapControllerRoute(
                     name: "api",
-                    pattern: "{controller}/{id?}",
+                    pattern: "{controller=Default}/{id?}",
                      defaults: new { controller = "Default" });
-
             });
 
+            app.Map("/routes", (a) =>
+            {
+                a.Run(async context =>
+                {
+                    //var endpointFeature = context.Features.Get<IEndpointFeature>();
+                    //var ep=endpointFeature.Endpoint;
+                    var endpoint = context.GetEndpoint();
+                    //var routes = context.GetRouteData().Routers.OfType<RouteCollection>().First();
 
-            app.UseDefault();
+                    //await context.Response.WriteAsync("Total number of routes: " + routes.Count.ToString() + Environment.NewLine);
+                    //for (int i = 0; i < routes.Count; i++)
+                    //{
+                    //    await context.Response.WriteAsync(routes[i].ToString() + Environment.NewLine);
+                    //}
 
-            //app.Map("/default", (a) => {
-            //    a.Use(async  (context, next) => {
-            //        //if (context.Request.Path == "/" || context.Request.Path.Value.ToLower() == "/default")
-            //        //{
-            //            if (context.Request.Method.ToLower() == "post")
-            //            {
-            //                var data = String.Empty;
-            //                using (var reader = new StreamReader(context.Request.Body))
-            //                {
-            //                    data = await reader.ReadToEndAsync();
-            //                    reader.Close();
-            //                }
-
-            //                RequestModel requestModel = new RequestModel();
-            //                if (!String.IsNullOrWhiteSpace(data))
-            //                {
-            //                    requestModel = System.Text.Json.JsonSerializer.Deserialize<RequestModel>(data, new System.Text.Json.JsonSerializerOptions
-            //                    {
-            //                        AllowTrailingCommas = true,
-            //                        IgnoreNullValues = true,
-            //                        PropertyNameCaseInsensitive = true,
-
-            //                    });
-            //                }
-
-            //                var controller = context.RequestServices.GetService<DefaultController>();
-
-            //                controller.Post(requestModel);
-
-            //                return;
-            //            }
-            //        //}
-            //    });
-            //});
-
-            //app.Run((ctx) => {
-            //    var endpoint=ctx.GetEndpoint();
-            //    return Task.CompletedTask;                
-            //});
+                    await context.Response.WriteAsync(endpoint?.DisplayName ?? "endpoint not fount.");
+                });
+            });
         }
     }
 }

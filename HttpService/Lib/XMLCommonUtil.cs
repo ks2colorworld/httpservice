@@ -13,7 +13,8 @@ using System.Text;
 using System.Configuration;
 
 using System.Data;
-using System.Data.SqlClient;
+//using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Xml;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
