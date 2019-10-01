@@ -399,20 +399,21 @@ namespace HttpService.Lib
                 xmldata += string.Format("<values>{0}", Environment.NewLine);
 
                 responseModel = new ResponseModel();
-                responseModel.Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>();
+                //responseModel.Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>();
+                responseModel.Values = new ValuesModel();
                 var filesList = new List<Dictionary<string, object>>();
                 for (int i = 0; i < fis.Length; i++)
                 {
-                    xmldata += string.Format("<item>{0}", Environment.NewLine);
+                    //xmldata += string.Format("<item>{0}", Environment.NewLine);
 
-                    xmldata += string.Format("<{0}>{1}</{0}>{2}",
-                        "file_name", fis[i].Name, Environment.NewLine);
-                    xmldata += string.Format("<{0}>{1}</{0}>{2}",
-                        "file_creationtime", fis[i].LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"), Environment.NewLine);
-                    xmldata += string.Format("<{0}>{1}</{0}>{2}",
-                        "file_url", fileBasicURL + fis[i].Name, Environment.NewLine);
+                    //xmldata += string.Format("<{0}>{1}</{0}>{2}",
+                    //    "file_name", fis[i].Name, Environment.NewLine);
+                    //xmldata += string.Format("<{0}>{1}</{0}>{2}",
+                    //    "file_creationtime", fis[i].LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"), Environment.NewLine);
+                    //xmldata += string.Format("<{0}>{1}</{0}>{2}",
+                    //    "file_url", fileBasicURL + fis[i].Name, Environment.NewLine);
 
-                    xmldata += string.Format("</item>{0}", Environment.NewLine);
+                    //xmldata += string.Format("</item>{0}", Environment.NewLine);
 
                     filesList.Add(new Dictionary<string, object>()
                     {
@@ -424,7 +425,7 @@ namespace HttpService.Lib
 
                 responseModel.Values.Add("item", filesList);
 
-                xmldata += "</values>";
+                //xmldata += "</values>";
             }
             catch(ServiceException ex)
             {

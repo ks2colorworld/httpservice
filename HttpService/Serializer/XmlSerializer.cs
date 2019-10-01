@@ -1,4 +1,5 @@
 ﻿using HttpService.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,13 @@ namespace HttpService.Serializer
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine(FIRST_LINE);
-            builder.AppendLine("<value>");
+            builder.Append("<value");
+
+            if (!String.IsNullOrWhiteSpace(model.Values.Namespace))
+            {
+                builder.Append($" namespace=\"{model.Values.Namespace}\"");
+            }
+            builder.AppendLine(">");
             builder.Append(WriteTable(model.Values));
             builder.AppendLine("</value>");
 

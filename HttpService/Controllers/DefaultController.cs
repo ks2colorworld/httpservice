@@ -52,7 +52,7 @@ namespace HttpService.Controllers
                     break;
                 //userlogin
                 case XMLCommonUtil.USER_LOGIN_GUBUN:
-                    var userLoginData = xmlCommonUtil.WriteXML(true);
+                    var userLoginData = xmlCommonUtil.WriteXML(false);
 
                     return Ok(userLoginData);
                     //break;

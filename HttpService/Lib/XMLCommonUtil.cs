@@ -129,7 +129,8 @@ namespace HttpService.Lib
             get
             {
                 // TODO Session 객체에 guid 값을 설정하는 코드가 없습니다.
-                return _httpContext.Session.GetString("guid");
+                return _httpContext.Session.Id;
+                //return _httpContext.Session.GetString("guid");
                 //return this.Session.SessionID;
                 //return _httpContext.Session["guid"].ToString();
             }
@@ -419,15 +420,24 @@ namespace HttpService.Lib
         {
             return new ResponseModel
             {
-                Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>{
-                    {
-                        "Item", new List<Dictionary<string, object>>{
+                //Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>{
+                //    {
+                //        "Item", new List<Dictionary<string, object>>{
+                //            new Dictionary<string, object>{
+                //                ["Code"] = code,
+                //                ["Message"] = msg,
+                //            }
+                //        }
+                //    }
+                //}
+                Values = new ValuesModel
+                {
+                    ["Item"] = new List<Dictionary<string, object>>{
                             new Dictionary<string, object>{
                                 ["Code"] = code,
                                 ["Message"] = msg,
                             }
                         }
-                    }
                 }
             };
 
@@ -535,7 +545,8 @@ namespace HttpService.Lib
         {
             //Dictionary<string, IEnumerable<DynamicRow>> dataSetProxy = new Dictionary<string, IEnumerable<DynamicRow>>();
 
-            var dataSetProxy = new Dictionary<string, IEnumerable<Dictionary<string, object>>>();
+            //var dataSetProxy = new Dictionary<string, IEnumerable<Dictionary<string, object>>>();
+            var dataSetProxy = new ValuesModel();
 
             DataSet result_ds = this.ReturnDataSet_Common(proc, sqlparams, include_sessionID);
 
@@ -567,7 +578,7 @@ namespace HttpService.Lib
             //*/
 
             result_ds.Relations.Clear();
-
+            dataSetProxy.Namespace = include_sessionID ? result_ds.Namespace : String.Empty;
             return new ResponseModel { Values = dataSetProxy };
         }
 
@@ -637,10 +648,14 @@ namespace HttpService.Lib
 
             return new ResponseModel
             {
-                Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>
+                //Values = new Dictionary<string, IEnumerable<Dictionary<string, object>>>
+                //{
+                //    [dt.TableName] = dt.ToDictionaryEnumerable(),
+                //},
+                Values = new ValuesModel
                 {
                     [dt.TableName] = dt.ToDictionaryEnumerable(),
-                },
+                }
             };
 
 #if TRY_CATCH_MENU
@@ -832,11 +847,14 @@ namespace HttpService.Lib
                     //*
                     else if (!string.ReferenceEquals(web_gubun, null))
                     {
+                    
                     }
                     else
                     {
                         //string ns = NAMESPACE_STR;
                         //ds.Namespace = ns;
+
+                     
                     }
                     //*/
 #endif
