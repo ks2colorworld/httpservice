@@ -69,7 +69,6 @@ namespace HttpService.Lib
         #endregion
         public ResponseModel GetFileInfo()
         {
-            // TODO 사용되지 않습니다.
             /*
              * gubun = file_info
              * attachment_key = string
@@ -122,7 +121,6 @@ namespace HttpService.Lib
         #endregion
         public ResponseModel DownloadFile()
         {
-            // TODO 확인 사용되지 않습니다.
             /*
              * gubun = file_download
              * attachment_key = string
@@ -633,6 +631,7 @@ namespace HttpService.Lib
 
             return dr;
         }
+       
         private DataSet Attachment_CRD(
             CRUD crd,
             string attachment_key,

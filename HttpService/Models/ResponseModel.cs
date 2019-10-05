@@ -85,20 +85,22 @@ namespace HttpService.Models
             }
         };
 
-        public static ResponseModel ErrorMessage(Exception ex)
+        public static ResponseModel ErrorMessage(Exception ex, string message = "")
         {
             var code = ServiceException.DEFAULT_CODE;
-            var message = String.Empty;
-
-            if (ex is ServiceException)
+            var errorMessage = message;
+            if (String.IsNullOrEmpty(errorMessage))
             {
-                var serviceEx = (ServiceException)ex;
-                code = serviceEx.Code;
+                if (ex is ServiceException)
+                {
+                    var serviceEx = (ServiceException)ex;
+                    code = serviceEx.Code;
+                }
+
+                errorMessage = ex.Message;
             }
 
-            message = ex.Message;
-
-            return ResponseModel.Message(code, message);
+            return ResponseModel.Message(code, errorMessage);
         }
 
         public static ResponseModel Message(string code, string message)

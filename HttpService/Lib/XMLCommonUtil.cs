@@ -466,6 +466,7 @@ namespace HttpService.Lib
             //*/
         }
 
+        // => ISessionManager
         public bool CheckSessionID(bool autoMessage)
         {
             bool issameSessionID = true;
