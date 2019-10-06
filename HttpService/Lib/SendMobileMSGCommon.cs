@@ -124,7 +124,7 @@ namespace HttpService.Lib
 
         public ResponseModel SendMobileMSG()
         {
-            if (this.MSG_TYPE == MSGType.MMS)
+            if (this.MSG_TYPE == MobileMessageType.MMS)
             {
                return this.SendMMS();
             }
@@ -141,7 +141,7 @@ namespace HttpService.Lib
         }
 
         //mms발송 - SendMMS()에서호출
-        private ResponseModel SendSMS(string receiverPhoneNum, string senderPhoneNum, string msg, string datetime, MSGType msgType, int mms_seq)
+        private ResponseModel SendSMS(string receiverPhoneNum, string senderPhoneNum, string msg, string datetime, MobileMessageType msgType, int mms_seq)
         {
             string out_msg = string.Empty;
 
@@ -177,7 +177,7 @@ namespace HttpService.Lib
 
             temp_param.Add(new SqlParameter("@" + TRAN_TYPE, msgType));
 
-            if (msgType == MSGType.MMS)
+            if (msgType == MobileMessageType.MMS)
             {
                 temp_param.Add(new SqlParameter("@" + TRAN_ETC4, mms_seq));
             }
@@ -358,7 +358,7 @@ namespace HttpService.Lib
             return isOK;
         }
 
-        private MSGType MSG_TYPE
+        private MobileMessageType MSG_TYPE
         {
             get
             {
@@ -369,10 +369,10 @@ namespace HttpService.Lib
 
                 if (xmlCommonUtil.RequestData.HasKey(MSG_TYPE_key))
                 {
-                    return (MSGType)Enum.Parse(typeof(MSGType), xmlCommonUtil.RequestData.GetValue(MSG_TYPE_key));
+                    return (MobileMessageType)Enum.Parse(typeof(MobileMessageType), xmlCommonUtil.RequestData.GetValue(MSG_TYPE_key));
                 }
 
-                return MSGType.SMS;
+                return MobileMessageType.SMS;
             }
         }
         private string SENDER_PHONE
@@ -573,81 +573,72 @@ namespace HttpService.Lib
         }
 
 
+        // enums 파일 이동
+        //private enum MobileMessageType
+        //{
+        //    SMS = 4,
+        //    URL = 5,
+        //    MMS = 6,
+        //}
+    }
 
-        private enum MSGType
+    public class MMSFiles
+    {
+        public MMSFiles(string fileType, string fileDownloadBasicUrl, string file_basic_local_path, string fileName)
         {
-            SMS = 4,
-            URL = 5,
-            MMS = 6,
+            this.file_type = fileType;
+            this.file_download_basic_url = fileDownloadBasicUrl;
+            this.file_name = fileName;
+            this.file_basic_local_path = @"c:\temp\";
+            try
+            {
+
+                //this.file_basic_local_path = ConfigurationManager.AppSettings["mms"].ToString();
+                //this.file_basic_local_path = appOptions.Mms;
+                this.file_basic_local_path = file_basic_local_path;
+            }
+            catch (Exception ex)
+            {
+                //XMLCommonUtil x = new XMLCommonUtil();
+                //x.ResponseWriteErrorMSG("mms 경로 설정을 확인바랍니다.(appSettings)", ex);
+                //xmlCommonUtil.ResponseWriteErrorMSG("mms 경로 설정을 확인바랍니다.(appSettings)", ex);
+
+                throw new Exception("mms 경로 설정을 확인바랍니다.(appSettings)");
+            }
         }
 
-        private enum FILETYPE
+        private string file_type;
+        private string file_basic_local_path;
+        private string file_download_basic_url;
+        private string file_name;
+
+        public FILETYPE FileType
         {
-            IMG,
-            TXT,
-            ADO,
-            MOV,
+            get
+            {
+                return (FILETYPE)Enum.Parse(typeof(FILETYPE), file_type);
+            }
         }
-
-        private class MMSFiles
+        public string FileLocalPath
         {
-            public MMSFiles(string fileType, string fileDownloadBasicUrl, string file_basic_local_path, string fileName)
+            get
             {
-                this.file_type = fileType;
-                this.file_download_basic_url = fileDownloadBasicUrl;
-                this.file_name = fileName;
-                this.file_basic_local_path = @"c:\temp\";
-                try
-                {
-                    
-                    //this.file_basic_local_path = ConfigurationManager.AppSettings["mms"].ToString();
-                    //this.file_basic_local_path = appOptions.Mms;
-                    this.file_basic_local_path = file_basic_local_path;
-                }
-                catch (Exception ex)
-                {
-                    //XMLCommonUtil x = new XMLCommonUtil();
-                    //x.ResponseWriteErrorMSG("mms 경로 설정을 확인바랍니다.(appSettings)", ex);
-                    //xmlCommonUtil.ResponseWriteErrorMSG("mms 경로 설정을 확인바랍니다.(appSettings)", ex);
-
-                    throw new Exception("mms 경로 설정을 확인바랍니다.(appSettings)");
-                }
+                return file_basic_local_path + file_name;
             }
-
-            private string file_type;
-            private string file_basic_local_path;
-            private string file_download_basic_url;
-            private string file_name;
-
-            public FILETYPE FileType
+        }
+        public string FileDownloadUrl
+        {
+            get
             {
-                get
-                {
-                    return (FILETYPE)Enum.Parse(typeof(FILETYPE), file_type);
-                }
+                return file_download_basic_url + file_name;
             }
-            public string FileLocalPath
+        }
+        public string FileName
+        {
+            get
             {
-                get
-                {
-                    return file_basic_local_path + file_name;
-                }
-            }
-            public string FileDownloadUrl
-            {
-                get
-                {
-                    return file_download_basic_url + file_name;
-                }
-            }
-            public string FileName
-            {
-                get
-                {
-                    return file_name;
-                }
+                return file_name;
             }
         }
     }
-
 }

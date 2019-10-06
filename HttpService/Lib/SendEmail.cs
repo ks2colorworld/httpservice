@@ -154,9 +154,9 @@ namespace HttpService.Lib
                 //string.Empty :
                 //xmlCommonUtil.QueryString[TO_key].ToString();
 
-                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(TO_key))
+                if (xmlCommonUtil.RequestData.Data.ContainsKey(TO_key))
                 {
-                    to = xmlCommonUtil.RequestData.Parameters[TO_key];
+                    to = xmlCommonUtil.RequestData.Data[TO_key];
                 }
 
                 string[] tos = to.Split(new string[] { ",", "|", " " }, StringSplitOptions.RemoveEmptyEntries);

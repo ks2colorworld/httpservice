@@ -871,9 +871,9 @@ namespace HttpService.Lib
                 //    "etc" :
                 //    xmlCommonUtil.QueryString[ATTACHMENT_GUBUN_key].ToString();
 
-                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(ATTACHMENT_GUBUN_key))
+                if (xmlCommonUtil.RequestData.Data.ContainsKey(ATTACHMENT_GUBUN_key))
                 {
-                    return xmlCommonUtil.RequestData.Parameters[ATTACHMENT_GUBUN_key];
+                    return xmlCommonUtil.RequestData.Data[ATTACHMENT_GUBUN_key];
                 }
 
                 return "etc";
@@ -884,9 +884,9 @@ namespace HttpService.Lib
         {
             get
             {
-                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(ATTACHMENT_DETAIL_CODE_key))
+                if (xmlCommonUtil.RequestData.Data.ContainsKey(ATTACHMENT_DETAIL_CODE_key))
                 {
-                    return xmlCommonUtil.RequestData.Parameters[ATTACHMENT_DETAIL_CODE_key];
+                    return xmlCommonUtil.RequestData.Data[ATTACHMENT_DETAIL_CODE_key];
                 }
 
                 return String.Empty;
@@ -900,9 +900,9 @@ namespace HttpService.Lib
         {
             get
             {
-                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(ATTACHMENT_KEY_key))
+                if (xmlCommonUtil.RequestData.Data.ContainsKey(ATTACHMENT_KEY_key))
                 {
-                    return xmlCommonUtil.RequestData.Parameters[ATTACHMENT_KEY_key];
+                    return xmlCommonUtil.RequestData.Data[ATTACHMENT_KEY_key];
                 }
 
                 return String.Empty;

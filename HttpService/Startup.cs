@@ -5,11 +5,14 @@ using System.Threading.Tasks;
 using HttpService.Lib;
 using HttpService.Middlewares;
 using HttpService.Options;
+using HttpService.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,13 +36,7 @@ namespace HttpService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers(options =>
-            {
-                //options.EnableEndpointRouting = true;
-
-                //options.AllowEmptyInputInBodyModelBinding = true;
-                //options.RespectBrowserAcceptHeader = false;
-            })
+            services.AddControllers()
              .ConfigureApiBehaviorOptions(options =>
              {
                  // 바인딩 소스 유추 사용안함
@@ -63,16 +60,10 @@ namespace HttpService
             services.AddSingleton<IWebHostEnvironment>(_ => HostEnvironment);
             services.AddSingleton<IConfiguration>(_ => Configuration);
 
-            services.AddTransient<RequestDataParser>();
-            services.AddTransient<XMLCommonUtil>();
-            services.AddTransient<FileCommonUtil>();
-            services.AddTransient<ExcelDownload>();
-            services.AddTransient<SendMobileMSGCommon>();
-            services.AddTransient<SendEmail>();
             services.AddTransient<Gmail>();
-            services.AddTransient<UploadAndPostTwitPic>();
 
-            //services.AddTransient<DefaultController>();
+            // 기본 서비스 구현 
+            services.AddDefaultServices();
 
             // 구성값
             services.Configure<AppOptions>(options =>
@@ -95,6 +86,13 @@ namespace HttpService
                 options.Properties = appSection.AsEnumerable().ToDictionary(item => item.Key, item => item.Value);
             });
 
+            services.Configure<EmailOptions>(options => {
+                options.SenderEmailAddress = Configuration.GetValue<string>("Email:SenderEmailAddress");
+                options.SenderName = Configuration.GetValue<string>("Email:SenderName");
+            });
+
+            services.Configure<GmailOptions>(Configuration.GetSection("Gmail"));
+            services.Configure<SendGridOptions>(Configuration.GetSection("SendGrid"));
 
             // session 사용
             services.AddSession(options =>
@@ -107,9 +105,6 @@ namespace HttpService
             services.AddDistributedMemoryCache();
 
             services.AddHealthChecks();
-
-
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -129,44 +124,29 @@ namespace HttpService
             // 세션 사용
             app.UseSession();
 
-            app.UseDefault();
+            app.UseDefaultMiddlewares();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
 
-                //endpoints.MapControllerRoute(
-                //      name: "areaRoute",
-                //      pattern: "{area:exists}/{controller}/{action}",
-                //      defaults: new { action = "Index" });
-
-                //endpoints.MapControllerRoute(
-                //        name: "default",
-                //        pattern: "{controller}/{action}/{id?}",
-                //        defaults: new { controller = "Default", action = "Index" });
-
                 endpoints.MapHealthChecks("/health");
-
-                endpoints.MapControllerRoute(
-                    name: "api",
-                    pattern: "{controller=Default}/{id?}",
-                     defaults: new { controller = "Default" });
             });
 
             app.Map("/routes", (a) =>
             {
                 a.Run(async context =>
                 {
-                    //var endpointFeature = context.Features.Get<IEndpointFeature>();
-                    //var ep=endpointFeature.Endpoint;
+                    var endpointFeature = context.Features.Get<IEndpointFeature>();
+                    var ep = endpointFeature.Endpoint;
                     var endpoint = context.GetEndpoint();
-                    //var routes = context.GetRouteData().Routers.OfType<RouteCollection>().First();
+                    var routes = context.GetRouteData().Routers.OfType<RouteCollection>().First();
 
-                    //await context.Response.WriteAsync("Total number of routes: " + routes.Count.ToString() + Environment.NewLine);
-                    //for (int i = 0; i < routes.Count; i++)
-                    //{
-                    //    await context.Response.WriteAsync(routes[i].ToString() + Environment.NewLine);
-                    //}
+                    await context.Response.WriteAsync("Total number of routes: " + routes.Count.ToString() + Environment.NewLine);
+                    for (int i = 0; i < routes.Count; i++)
+                    {
+                        await context.Response.WriteAsync(routes[i].ToString() + Environment.NewLine);
+                    }
 
                     await context.Response.WriteAsync(endpoint?.DisplayName ?? "endpoint not fount.");
                 });

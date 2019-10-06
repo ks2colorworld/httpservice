@@ -308,7 +308,7 @@ namespace HttpService.Lib
 
                 List<SqlParameter> temp_param = new List<SqlParameter>();
                 //if (QueryString.Count == 0)
-                if (requestData.Parameters.Count == 0)
+                if (requestData.Data.Count == 0)
                 {
                     return temp_param.ToArray();
                 }
@@ -337,7 +337,7 @@ namespace HttpService.Lib
                 //    temp_param.Add(new SqlParameter($"@{key}", item.Value));
                 //}
 
-                foreach (var item in requestData.Parameters)
+                foreach (var item in requestData.Data)
                 {
                     string key = item.Key;
 

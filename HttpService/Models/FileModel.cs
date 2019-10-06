@@ -7,7 +7,6 @@ namespace HttpService.Models
 {
     public class FileModel
     {
-        public string Attachment_key { get; set; }
         public string Name { get; set; }
         public string Format { get; set; }
         public long Size { get; set; }

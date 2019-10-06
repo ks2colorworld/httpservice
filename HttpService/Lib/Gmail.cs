@@ -5,6 +5,7 @@ using System.IO.Compression;
 //using Ionic.Utils.Zip;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 //Developed By: Daniel J. C. Costa;
 //WebSite: http://www.danielcosta.pt
@@ -21,11 +22,11 @@ namespace HttpService.Lib
         private int _priority;
         private string _username;
         private string _password;
-        private Boolean _autenticado = false;
-        private ArrayList _listTo = new ArrayList();
-        private ArrayList _listCc = new ArrayList();
-        private ArrayList _listBcc = new ArrayList();
-        private ArrayList _listAnexos = new ArrayList();
+        private bool _authorized = false;
+        private IList<string> _listTo = new List<string>();
+        private IList<string> _listCc = new List<string>();
+        private IList<string> _listBcc = new List<string>();
+        private IList<string> _listAnexos = new List<string>();
         // TODO 확인 사용되지 않습니다.
         //private string _zipFileName;
 
@@ -109,25 +110,35 @@ namespace HttpService.Lib
 
         private void autentica()
         {
-            System.Net.NetworkCredential mailAuthentication = new
-            System.Net.NetworkCredential(this._username, this._password);
+            var mailAuthentication = new System.Net.NetworkCredential(this._username, this._password);
+
             mailClient.EnableSsl = true;
             mailClient.UseDefaultCredentials = false;
             mailClient.Credentials = mailAuthentication;
-            this._autenticado = true;
+
+            this._authorized = true;
         }
 
-        public Boolean auth(string username, string password)
+        public bool auth(string username, string password)
         {
-            this._username = username;
-            this._password = password;
-            autentica();
-            return true;
+            try
+            {
+                this._username = username;
+                this._password = password;
+
+                autentica();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public Boolean send()
         {
-            if (_autenticado == true)
+            if (_authorized == true)
             {
                 MailMessage MyMailMessage = new MailMessage();
                 if (_fromAlias == "")

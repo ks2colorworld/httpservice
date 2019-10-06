@@ -131,9 +131,9 @@ namespace HttpService.Lib
                     //string.Empty :
                     //xmlCommonUtil.QueryString[TWIT_ID_key].ToString();
 
-                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(TWIT_ID_key))
+                if (xmlCommonUtil.RequestData.Data.ContainsKey(TWIT_ID_key))
                 {
-                    id = xmlCommonUtil.RequestData.Parameters[TWIT_ID_key];
+                    id = xmlCommonUtil.RequestData.Data[TWIT_ID_key];
                 }
 
                 id = id.Replace("@", " ");
@@ -161,9 +161,9 @@ namespace HttpService.Lib
                 //string.Empty :
                 //xmlCommonUtil.QueryString[MESSAGE_key].ToString();
 
-                if (xmlCommonUtil.RequestData.Parameters.ContainsKey(MESSAGE_key))
+                if (xmlCommonUtil.RequestData.Data.ContainsKey(MESSAGE_key))
                 {
-                    msg = xmlCommonUtil.RequestData.Parameters[MESSAGE_key];
+                    msg = xmlCommonUtil.RequestData.Data[MESSAGE_key];
                 }
 
                 return return_str + " " + msg;

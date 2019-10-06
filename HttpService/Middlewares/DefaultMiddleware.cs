@@ -1,6 +1,7 @@
 ﻿using HttpService.Lib;
 using HttpService.Models;
 using HttpService.Options;
+using HttpService.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,7 +26,7 @@ namespace HttpService.Middlewares
 {
     public static class DefaultMiddleware
     {
-        public static void UseDefault(this IApplicationBuilder app)
+        public static void UseDefaultMiddlewares(this IApplicationBuilder app)
         {
             app.MapWhen((context) =>
             {
@@ -40,13 +42,16 @@ namespace HttpService.Middlewares
                 return context.Request.Path.HasValue && paths.Contains(context.Request.Path.Value, new PathComparer());
             }, FileHandler);
 
+            app.MapWhen((context) =>
+            {
+                var paths = new[] { "/Uploader", "/Uploader.aspx", "/Uploader.ashx" };
 
+                return context.Request.Path.HasValue && paths.Contains(context.Request.Path.Value, new PathComparer());
+            }, UploadHandler);
         }
 
         private static void DefaultHandler(IApplicationBuilder app)
         {
-
-
             app.Run(async (context) =>
             {
                 if (context.Request.Path.HasValue)
@@ -58,49 +63,38 @@ namespace HttpService.Middlewares
                     "menu_ctrl_bind",
                 };
 
+                //var requestDataParser = app.ApplicationServices.GetService<RequestDataParser>();
+                //var xmlCommonUtil = app.ApplicationServices.GetService<XMLCommonUtil>();
+                //var excelDownload = app.ApplicationServices.GetService<ExcelDownload>();
+                //var sendMobileMSGCommon = app.ApplicationServices.GetService<SendMobileMSGCommon>();
+                //var sendEmail = app.ApplicationServices.GetService<SendEmail>();
+                //var uploadAndPostTwitPic = app.ApplicationServices.GetService<UploadAndPostTwitPic>();
+
+
                 var requestDataParser = app.ApplicationServices.GetService<RequestDataParser>();
-                var xmlCommonUtil = app.ApplicationServices.GetService<XMLCommonUtil>();
-                var excelDownload = app.ApplicationServices.GetService<ExcelDownload>();
-                var sendMobileMSGCommon = app.ApplicationServices.GetService<SendMobileMSGCommon>();
-                var sendEmail = app.ApplicationServices.GetService<SendEmail>();
-                var uploadAndPostTwitPic = app.ApplicationServices.GetService<UploadAndPostTwitPic>();
+                var databaseManager  = app.ApplicationServices.GetService<IDatabaseManager>();
+                var fileManager = app.ApplicationServices.GetService<IFileManager>();
+                var mobileMessageManager=app.ApplicationServices.GetService<IMobileMessageManager>();
+                var emailManager = app.ApplicationServices.GetService<IEmailManager>();
+                var httpContextManager = app.ApplicationServices.GetService<IHttpContextManager>();
+                var responsePreprocessManager = app.ApplicationServices.GetService<IResponsePreprocessManager>();
+                var twitPicManager = app.ApplicationServices.GetService<ITwitPicManager>();
 
                 RequestModel model = new RequestModel();
 
                 model = await requestDataParser.Parse();
 
-                //if (context.Request.Method.ToLower() == "post")
-                //{
-                //    var data = String.Empty;
-                //    using (var reader = new StreamReader(context.Request.Body))
-                //    {
-                //        data = await reader.ReadToEndAsync();
-                //        reader.Close();
-                //    }
-                //    if (!String.IsNullOrWhiteSpace(data))
-                //    {
-                //        var jsonSerializerOptions = new JsonSerializerOptions
-                //        {
-                //            AllowTrailingCommas = true,
-                //            IgnoreNullValues = true,
-                //            PropertyNameCaseInsensitive = true,
-                //            MaxDepth = 2,
-                //        };
-                //        jsonSerializerOptions.Converters.Add(new HttpService.Serializer.RequestModelJsonConverter());
-                //        model = JsonSerializer.Deserialize<RequestModel>(data, jsonSerializerOptions);
-                //    }
-                //}
+                //xmlCommonUtil.SetReqestModel(model);
+                //string gubun = xmlCommonUtil.GUBUN;
 
-                xmlCommonUtil.SetReqestModel(model);
-
-                string gubun = xmlCommonUtil.GUBUN;
+                string gubun = model.GetValue(Constants.GUBUN_KEY_STRING);
 
                 Func<bool> passCheckSessionIDFunc = () =>
                 {
                     bool isPass = false;
                     for (int i = 0; i < noCheckSessionIDGubun.Length; i++)
                     {
-                        if (noCheckSessionIDGubun[i] == xmlCommonUtil.GUBUN)
+                        if (noCheckSessionIDGubun[i] == gubun)
                         {
                             isPass = true;
                             break;
@@ -111,32 +105,50 @@ namespace HttpService.Middlewares
 
                 var PassCheckSessionID = passCheckSessionIDFunc();
 
-                if (!xmlCommonUtil.CheckSessionID() && !PassCheckSessionID)
-                {
-                    // TODO 반환값 정의
-                    //return StatusCode(401);
-                    context.Response.StatusCode = 401;
-                }
+                
 
                 ResponseModel responseModel = null;
+                DataSet dataSet = null;
+
                 try
                 {
+                    if (!PassCheckSessionID && !httpContextManager.Check(model))
+                    {
+                        // TODO 반환값 정의
+                        //return StatusCode(401);
+                        //context.Response.StatusCode = 401;
+
+                        var clientSessionId = model.GetValue(Constants.SESSIONID_KEY_STRING);
+
+                        if (String.IsNullOrEmpty(clientSessionId))
+                        {
+                            throw new ServiceException($"{Constants.SESSIONID_KEY_STRING}값을 넘기지 않았습니다.");
+                        }
+
+                        throw new ServiceException("999", "서버와 세션유지시간이 초과하였습니다.");
+                    }
+
                     switch (gubun)
                     {
                         //sessionID_check
-                        case XMLCommonUtil.SESSIONID_CHECK_GUBUN:
-                        case XMLCommonUtil.GET_SESSIONID_GUBUN:
-                            responseModel = xmlCommonUtil.returnSessionID();
+                        case Constants.SESSIONID_CHECK_GUBUN:
+                        case Constants.GET_SESSIONID_GUBUN:
+                            //responseModel = xmlCommonUtil.returnSessionID();
+                            var currentSessionId = httpContextManager.GetSessionId();
+                            responseModel = ResponseModel.Message("1", currentSessionId);
                             break;
                         //userlogin
-                        case XMLCommonUtil.USER_LOGIN_GUBUN:
-                            responseModel = xmlCommonUtil.WriteXML(true);
-
-                            //return Ok(userLoginData);
+                        case Constants.USER_LOGIN_GUBUN:
+                            //responseModel = xmlCommonUtil.WriteXML(true);
+                            dataSet = await databaseManager.ExecuteQueryAsync(model, true);
+                            responseModel = responsePreprocessManager.ProcessDataSet(dataSet);
                             break;
                         //break;
                         case "menu_ctrl_bind":
-                            responseModel = xmlCommonUtil.ReturnMenuXML();
+                            //responseModel = xmlCommonUtil.ReturnMenuXML();
+                            // 메뉴 데이터 처리 
+                            dataSet = await databaseManager.ExecuteQueryAsync(model, true);
+                            responseModel = responsePreprocessManager.ProcessDataSet(dataSet);
                             break;
 
                         /*/sendSMS - 사용안함.
@@ -160,71 +172,65 @@ namespace HttpService.Middlewares
                         case "send_sms":
                             //SendMobileMSGCommon smmc = new SendMobileMSGCommon();
                             //smmc.SendMobileMSG();
-                            responseModel = sendMobileMSGCommon.SendMobileMSG();
+                            //responseModel = sendMobileMSGCommon.SendMobileMSG();
+
+                            responseModel = await mobileMessageManager.Send(model);
+
                             break;
 
                         case "csv":
                             //ExcelDownload ed = new ExcelDownload();
                             //ed.DownLoadCSVFile();
 
-                            var response = excelDownload.DownLoadCSVFile();
-                            if (response is FileResponseModel)
-                            {
-                                var fileResponse = response as FileResponseModel;
-                                //return File(fileResponse.Content, fileResponse.ContentType, fileResponse.FileName);
-                                break;
-                            }
-                            else
-                            {
-                                //return Ok(response);
-                                break;
-                            }
-                        //break;
+                            //var response = excelDownload.DownLoadCSVFile();
+                            responseModel = await fileManager.DownloadCsv(model);
+                            break;
 
                         case "send_email":
                             //SendEmail se = new SendEmail();
                             //se.send();
-                            var sendemailResult = sendEmail.send();
+                            //var sendemailResult = sendEmail.send();
                             //return Ok(sendemailResult);
+
+                            responseModel = await emailManager.Send(model);
 
                             break;
 
                         case "upload_twitpic":
+                            // TODO 필요하면 구현 ==> emailmanager
+
                             //UploadAndPostTwitPic ut = new UploadAndPostTwitPic();
                             //ut.UploadAndPost();
 
-                            var uploadAndPostTwitPicResult = uploadAndPostTwitPic.UploadAndPost();
-                            //return Ok(uploadAndPostTwitPicResult);
+                            //var uploadAndPostTwitPicResult = uploadAndPostTwitPic.UploadAndPost();
+                            responseModel =await twitPicManager.Post(model);
+                            
                             break;
 
                         /*기본 xml return *********************************/
                         default:
-                            //if (!string.IsNullOrEmpty(xmlCommonUtil.QueryString[XMLCommonUtil.PROC_KEY_STRING]))
-                            //if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.Proc))
-                            if (!string.IsNullOrEmpty(xmlCommonUtil.RequestData.GetValue(XMLCommonUtil.PROC_KEY_STRING)))
+
+                            if (!string.IsNullOrEmpty(model.GetValue(XMLCommonUtil.PROC_KEY_STRING)))
                             {
-                                //var dataResult 
-                                responseModel = xmlCommonUtil.WriteXML(false);
+                                dataSet = await databaseManager.ExecuteQueryAsync(model, false);
 
                                 //dataResult = ResponseModel.Sampe;
                                 //dataResult = ResponseModel.Empty;
+
+                                responseModel = responsePreprocessManager.ProcessDataSet(dataSet);
                             }
                             else
                             {
-                                var messageResult = xmlCommonUtil.ResponseWriteErrorMSG("필수 매개변수를 넘기지 않았습니다.");
-                                // TODO 반환값 정의
-                                //return Ok(messageResult);
+                                //var messageResult = xmlCommonUtil.ResponseWriteErrorMSG("필수 매개변수를 넘기지 않았습니다.");
+
+                                throw new ServiceException("필수 매개변수를 넘기지 않았습니다.");
                             }
                             break;
                     }
                 }
-                //catch (ServiceException ex)
-                //{
-                //    responseModel = ResponseModel.ErrorMessage(ex);
-                //}
                 catch (Exception ex)
                 {
-                    responseModel = ResponseModel.ErrorMessage(ex);
+                    responseModel = responsePreprocessManager.ProcessException(ex);
                 }
 
                 if (responseModel == null)
@@ -235,9 +241,6 @@ namespace HttpService.Middlewares
                 await context.ExecuteResponseModelResult(responseModel);
 
                 return;
-
-
-                //await next.Invoke();
             });
         }
 

@@ -10,9 +10,9 @@ namespace HttpService.Serializer
     {
         public override RequestModel Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            RequestModel data = new RequestModel();
-            Dictionary<string, string> dic = data;
-            string selectedDictionary = nameof(data);
+            RequestModel requestModel = new RequestModel();
+            Dictionary<string, string> dic = requestModel;
+            string selectedDictionary = nameof(requestModel);
             string propertyName = String.Empty;
 
             while (reader.Read())
@@ -21,19 +21,19 @@ namespace HttpService.Serializer
                 {
                     propertyName = reader.GetString();
 
-                    if (propertyName.Equals("parameters", StringComparison.OrdinalIgnoreCase))
+                    if (propertyName.Equals("data", StringComparison.OrdinalIgnoreCase))
                     {
-                        selectedDictionary = nameof(data.Parameters);
-                        dic = data.Parameters;
+                        selectedDictionary = nameof(requestModel.Data);
+                        dic = requestModel.Data;
                     }                    
                 }
 
                 if(reader.TokenType == JsonTokenType.EndObject)
                 {
-                    if (selectedDictionary.Equals(nameof(data.Parameters)))
+                    if (selectedDictionary.Equals(nameof(requestModel.Data)))
                     {
-                        selectedDictionary = nameof(data);
-                        dic = data;
+                        selectedDictionary = nameof(requestModel);
+                        dic = requestModel;
                     }                    
                 }
 
@@ -54,7 +54,7 @@ namespace HttpService.Serializer
                 }
             }
 
-            return data;
+            return requestModel;
         }
 
         public override void Write(Utf8JsonWriter writer, RequestModel value, JsonSerializerOptions options)

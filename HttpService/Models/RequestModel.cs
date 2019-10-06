@@ -12,26 +12,9 @@ using System.Xml.Serialization;
 
 namespace HttpService.Models
 {
-    //[DataContract]
     public class RequestModel : Dictionary<string, string> 
     {
-        //public string Gubun { get; set; }
-
-        //public string Proc { get; set; }
-
-        //public string Web_gubun { get; set; }
-
-        //public string SessionId { get; set; }
-
-        //public string Organization_key { get; set; }
-
-        //public string Operator_key { get; set; }
-
-        //public InnerRequestModel Data { get; set; } = new InnerRequestModel();
-
-        //public InnerRequestModel Options { get; set; } = new InnerRequestModel();
-
-        public Dictionary<string, string> Parameters { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Data { get; set; } = new Dictionary<string, string>();
 
         public string GetValue(string key, string defaultValue = "")
         {
@@ -40,11 +23,11 @@ namespace HttpService.Models
                 return this[key];
             }            
 
-            if (Parameters.Count > 0)
+            if (Data.Count > 0)
             {
-                if (Parameters.ContainsKey(key))
+                if (Data.ContainsKey(key))
                 {
-                    return Parameters[key];
+                    return Data[key];
                 }
             }
        
@@ -58,9 +41,9 @@ namespace HttpService.Models
                 return true;
             }
 
-            if (Parameters.Count > 0)
+            if (Data.Count > 0)
             {
-                if (Parameters.ContainsKey(key))
+                if (Data.ContainsKey(key))
                 {
                     return true;
                 }
