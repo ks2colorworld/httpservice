@@ -25,7 +25,7 @@ namespace HttpService.Serializer
                     {
                         selectedDictionary = nameof(requestModel.Data);
                         dic = requestModel.Data;
-                    }                    
+                    }   
                 }
 
                 if(reader.TokenType == JsonTokenType.EndObject)

@@ -10,8 +10,8 @@ namespace HttpService.Services
     {
         public static IServiceCollection AddDefaultServices(this IServiceCollection services)
         {
-
             services.AddTransient<IQueryManager, SqlServerQueryManager>();
+
             services.AddTransient<IDatabaseManager, DatabaseManager>();
             services.AddTransient<IEmailManager, EmailManager>();
             services.AddTransient<IFileManager, FileManager>();

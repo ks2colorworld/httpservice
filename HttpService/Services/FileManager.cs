@@ -648,7 +648,7 @@ namespace HttpService.Services
                     parameters.Add(Constants.ATTACHMENT_KEY_key, requestModel.GetValue(Constants.ATTACHMENT_KEY_key));
                     break;
                 case CRUD.C:
-                    parameters.Add(Constants.ATTACHMENT_GUBUN_key, requestModel.GetValue(Constants.ATTACHMENT_GUBUN_key));
+                    parameters.Add(Constants.ATTACHMENT_GUBUN_key, requestModel.GetValue(Constants.ATTACHMENT_GUBUN_key, "etc"));
                     parameters.Add(Constants.ATTACHMENT_DETAIL_CODE_key, requestModel.GetValue(Constants.ATTACHMENT_DETAIL_CODE_key));
                     parameters.Add(Constants.ATTACHMENT_FILENAME_key, fileModel.Name);
                     parameters.Add(Constants.ATTACHMENT_FILEFORMAT_key, fileModel.Format);
@@ -680,7 +680,7 @@ namespace HttpService.Services
 
             var attachmentPathKey = $"{GetATTACHMENT_TYPE(model)}_path";
 
-            if (!appOptions.Properties.TryGetValue(attachmentPathKey, out attachmentFileBaicUrl))
+            if (!appOptions.Properties.TryGetValue($"App:{attachmentPathKey}", out attachmentFileBaicUrl))
             {
                 attachmentFileBaicUrl = String.Empty;
             }
@@ -696,7 +696,7 @@ namespace HttpService.Services
         private string ReturnDirectoryPath(string header, string attachment_gubun, string attachment_detail_code)
         {
             //string returnPath = ConfigurationManager.AppSettings[attachment_gubun];
-            string returnPath = appOptions[attachment_gubun];
+            string returnPath = appOptions[$"App:{attachment_gubun}"];
             //*각 문서키별로 첨부파일 관리!!
             try
             {

@@ -53,6 +53,7 @@ namespace HttpService.Services
                 var command = connection.CreateCommand();
                 command.CommandText = commandText;
                 command.CommandType = System.Data.CommandType.StoredProcedure;
+                command.Transaction = transaction;
 
                 if (parameters != null && parameters.Count() > 0)
                 {

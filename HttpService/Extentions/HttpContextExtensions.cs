@@ -19,7 +19,7 @@ namespace HttpService
         /// <param name="context"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public static Task ExecuteResponseModelResult(this HttpContext context, ResponseModel model)
+        public static async Task ExecuteResponseModelResult(this HttpContext context, ResponseModel model)
         {
             ISerializer serializer = null;
             var contentType = context.Request.Headers["Accept"];
@@ -28,7 +28,7 @@ namespace HttpService
             {
                 var fileResponseModel = (FileResponseModel)model;
                 // 파일 응답
-                context.Response.Headers[""] = fileResponseModel.FileName;
+                //context.Response.Headers[""] = fileResponseModel.FileName;
                 if (context.Response.Headers.ContainsKey("Content-Disposition"))
                 {
                     context.Response.Headers.Remove("Content-Disposition");
@@ -43,8 +43,8 @@ namespace HttpService
                 //}
                 //context.Response.Headers.Add("Content-Type", fileResponseModel.ContentType);
                 context.Response.ContentType = fileResponseModel.ContentType;
-                context.Response.BodyWriter.WriteAsync(fileResponseModel.Content);
-                return context.Response.CompleteAsync();
+                await context.Response.BodyWriter.WriteAsync(fileResponseModel.Content);
+                await context.Response.CompleteAsync();
             }
             else
             {
@@ -61,7 +61,7 @@ namespace HttpService
                         serializer = new JsonSerializer();
                     }
 
-                    if (String.IsNullOrEmpty(contentType))
+                    if (serializer == null)
                     {
                         // TODO 응답 형식 기본값으로 설정합니다.
                         contentType = "text/xml";
@@ -75,11 +75,10 @@ namespace HttpService
                     var content = serializer.Serialize(model);
 
                     context.Response.Headers["content-type"] = contentType;
-                    return context.Response.WriteAsync(content);
+                    await context.Response.WriteAsync(content);
+                    await context.Response.CompleteAsync();
                 }
             }
-
-            return Task.CompletedTask;
         }
     }
 }

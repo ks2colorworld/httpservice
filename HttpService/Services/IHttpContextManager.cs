@@ -18,5 +18,7 @@ namespace HttpService.Services
         bool CheckSessionId(string sessionIdFromClient);
 
         IFormFileCollection GetFormFiles();
+
+        Task<RequestModel> ParseRequestData();
     }
 }
