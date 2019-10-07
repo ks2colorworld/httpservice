@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+    blog-service-api:
+        container_name: Http-Service
+        image: ks2colorworld/httpservice:latest
+        external_links:
+            - mssql-server:mssql-server
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Production
+        ports:
+            - "25010:80"
+        volumes:
+            - /volume1/docker/httpservice/files:/var/httpservice/files
+        network_mode: bridge
