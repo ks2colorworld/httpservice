@@ -1,5 +1,6 @@
 ﻿using HttpService.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -10,9 +11,11 @@ namespace HttpService.Services
     public class HttpContextManager : IHttpContextManager
     {
         public HttpContextManager(
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            ILoggerFactory loggerFactory)
         {
             httpContext = httpContextAccessor.HttpContext;
+            logger = loggerFactory.CreateLogger<HttpContextManager>();
         }
 
         public async Task<RequestModel> ParseRequestData()
@@ -82,7 +85,21 @@ namespace HttpService.Services
 
         public string GetRemoteIpAddress()
         {
-            return httpContext.Connection.RemoteIpAddress.ToString();
+            string ipAddress = httpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
+
+            if (httpContext.Request.Headers.ContainsKey("X-Forwarded-For"))
+            {
+                var ipAddressFromHeader = httpContext.Request.Headers["X-Forwarded-For"];
+
+                if (!String.IsNullOrEmpty(ipAddressFromHeader))
+                {
+                    ipAddress = ipAddressFromHeader;
+                }
+            }
+
+            logger.LogInformation($"Remote ip address: {ipAddress}");
+
+            return ipAddress;
         }
 
         /// <summary>
@@ -159,5 +176,6 @@ namespace HttpService.Services
         }
 
         private readonly HttpContext httpContext;
+        private readonly ILogger logger;
     }
 }
