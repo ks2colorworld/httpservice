@@ -9,7 +9,7 @@ services:
         environment:
             - ASPNETCORE_ENVIRONMENT=Production
         ports:
-            - "25010:5000"
+            - "25010:80"
         volumes:
             - /volume1/docker/httpservice/files:/var/httpservice/files
         network_mode: bridge
