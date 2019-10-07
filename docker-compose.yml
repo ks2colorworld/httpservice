@@ -11,5 +11,5 @@ services:
         ports:
             - "25010:5000"
         volumes:
-            - /volume1/docker/nodeblog/uploads:/usr/src/app/uploads
+            - /volume1/docker/httpservice/files:/var/httpservice/files
         network_mode: bridge
