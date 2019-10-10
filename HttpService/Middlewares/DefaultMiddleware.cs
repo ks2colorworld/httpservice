@@ -28,6 +28,10 @@ namespace HttpService.Middlewares
     {
         public static void UseDefaultMiddlewares(this IApplicationBuilder app)
         {
+            /**
+             * 요청을 처리합니다.
+             * 대상 URI: / , /Default, /Default.aspx 
+             */
             app.MapWhen((context) =>
             {
                 var paths = new[] { "/", "/Default", "/Default.aspx" };
@@ -35,6 +39,10 @@ namespace HttpService.Middlewares
                 return context.Request.Path.HasValue && paths.Contains(context.Request.Path.Value, new PathComparer());
             }, DefaultHandler);
 
+            /**
+             * 요청을 처리합니다.
+             * 대상 URI: /File, /File.aspx 
+             */
             app.MapWhen((context) =>
             {
                 var paths = new[] { "/File", "/File.aspx" };
@@ -42,6 +50,10 @@ namespace HttpService.Middlewares
                 return context.Request.Path.HasValue && paths.Contains(context.Request.Path.Value, new PathComparer());
             }, FileHandler);
 
+            /**
+             * 요청을 처리합니다.
+             * 대상 URI: /Uploader , /Uploader.aspx, /Uploader.ashx 
+             */
             app.MapWhen((context) =>
             {
                 var paths = new[] { "/Uploader", "/Uploader.aspx", "/Uploader.ashx" };
@@ -63,6 +75,7 @@ namespace HttpService.Middlewares
                     "menu_ctrl_bind",
                 };
 
+                // 의존 객체의 인스턴스를 생성합니다.
                 var databaseManager  = app.ApplicationServices.GetService<IDatabaseManager>();
                 var fileManager = app.ApplicationServices.GetService<IFileManager>();
                 var mobileMessageManager=app.ApplicationServices.GetService<IMobileMessageManager>();
@@ -73,6 +86,7 @@ namespace HttpService.Middlewares
 
                 RequestModel model = new RequestModel();
 
+                // HTTP 요청 본문 또는 FormData 를 객체로 변환합니다. 
                 model = await httpContextManager.ParseRequestData();
 
                 string gubun = model.GetValue(Constants.GUBUN_KEY_STRING);
@@ -115,19 +129,16 @@ namespace HttpService.Middlewares
                         //sessionID_check
                         case Constants.SESSIONID_CHECK_GUBUN:
                         case Constants.GET_SESSIONID_GUBUN:
-                            //responseModel = xmlCommonUtil.returnSessionID();
                             var currentSessionId = httpContextManager.GetSessionId();
                             responseModel = ResponseModel.Message("1", currentSessionId);
                             break;
                         //userlogin
                         case Constants.USER_LOGIN_GUBUN:
-                            //responseModel = xmlCommonUtil.WriteXML(true);
                             dataSet = await databaseManager.ExecuteQueryAsync(model, true);
                             responseModel = responsePreprocessManager.ProcessDataSet(dataSet);
                             break;
                         //break;
                         case "menu_ctrl_bind":
-                            //responseModel = xmlCommonUtil.ReturnMenuXML();
                             // 메뉴 데이터 처리 
                             dataSet = await databaseManager.ExecuteQueryAsync(model, true);
                             responseModel = responsePreprocessManager.ProcessDataSet(dataSet);
@@ -174,6 +185,7 @@ namespace HttpService.Middlewares
                             {
                                 dataSet = await databaseManager.ExecuteQueryAsync(model, false);
 
+                                // 예제 데이터 확인
                                 //dataResult = ResponseModel.Sampe;
                                 //dataResult = ResponseModel.Empty;
 
@@ -208,6 +220,7 @@ namespace HttpService.Middlewares
             {
                 var httpContextManager = app.ApplicationServices.GetService<IHttpContextManager>();
                 var fileManager = app.ApplicationServices.GetService<IFileManager>();
+                var responsePreprocessManager = app.ApplicationServices.GetService<IResponsePreprocessManager>();
 
                 string gubun = String.Empty;// = xmlCommonUtil.GUBUN;
                 string webGubun = String.Empty; // xmlCommonUtil.WEB_GUBUN;
@@ -266,7 +279,7 @@ namespace HttpService.Middlewares
                 }
                 catch (Exception ex)
                 {
-                    responseModel = ResponseModel.ErrorMessage(ex);
+                    responseModel = responsePreprocessManager.ProcessException(ex);
                 }
 
                 if (responseModel == null)
@@ -282,9 +295,11 @@ namespace HttpService.Middlewares
         {
             app.Run(async (context) => {
 
+                var loggerFactory = app.ApplicationServices.GetService<ILoggerFactory>();
+                var logger = loggerFactory.CreateLogger("UploadHandler");
                 var httpContextManager = app.ApplicationServices.GetService<IHttpContextManager>();
                 var fileManager = app.ApplicationServices.GetService<IFileManager>();
-
+                
                 RequestModel requestModel = null;
                 ResponseModel responseModel = null;
 
@@ -300,6 +315,8 @@ namespace HttpService.Middlewares
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, $"{nameof(UploadHandler)}: {ex.Message}");
+
                     responseModel = ResponseModel.Message("100", "파일업로드 에러가 발생했습니다.");
                 }
 
