@@ -10,7 +10,9 @@ namespace HttpService.Services
     {
         public static IServiceCollection AddDefaultServices(this IServiceCollection services)
         {
+            // HACK 대상 데이터베이스를 변경하려면 아래 두 라인을 변경하세요.
             services.AddTransient<IQueryManager, SqlServerQueryManager>();
+            //services.AddTransient<IQueryManager, MySqlQueryManager>();
 
             services.AddTransient<IDatabaseManager, DatabaseManager>();
             services.AddTransient<IEmailManager, EmailManager>();

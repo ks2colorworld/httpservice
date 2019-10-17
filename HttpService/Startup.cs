@@ -120,13 +120,13 @@ namespace HttpService
             //app.UseHttpsRedirection();
 
             // 역방향 프록시 서버 사용시
-            //if (env.IsProduction())
-            //{
-            //    app.UseForwardedHeaders(new ForwardedHeadersOptions
-            //    {
-            //        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-            //    });
-            //}
+            if (env.IsProduction())
+            {
+                app.UseForwardedHeaders(new ForwardedHeadersOptions
+                {
+                    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+                });
+            }
 
             app.UseRouting();
 

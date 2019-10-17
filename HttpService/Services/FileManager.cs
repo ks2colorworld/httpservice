@@ -85,7 +85,13 @@ namespace HttpService.Services
             }
             catch (Exception ex)
             {
-                throw new Exception("httpservice(ReturnFileFullPath).Error check", ex);
+                string exceptionMessage = "httpservice(ReturnFileFullPath).Error check";
+                if(ex is ServiceException)
+                {
+                    exceptionMessage = ex.Message;
+                }
+
+                throw new Exception(exceptionMessage, ex);
             }
 
             var filePath = System.IO.Path.Join(returnfilefullpath, attachment_filename);
